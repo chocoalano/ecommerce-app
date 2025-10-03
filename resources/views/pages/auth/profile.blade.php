@@ -114,16 +114,17 @@
 @endphp
 
 <section class="bg-white py-8 antialiased dark:bg-gray-900 md:py-8">
-    <div class="mx-auto max-w-5/6 px-4 2xl:px-0">
+    {{-- Diubah ke max-w-7xl untuk layout yang lebih luas (opsional) --}}
+    <div class="mx-auto max-w-7xl px-4 2xl:px-0">
 
-        {{-- Breadcrumbs --}}
+        {{-- Breadcrumbs (Tetap menggunakan Flowbite/Tailwind) --}}
         <nav class="mb-4 flex" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
                 @foreach ($breadcrumbs as $i => $bc)
                     <li class="inline-flex items-center">
                         @if ($i === 0)
                             <a href="{{ $bc['href'] ?? '#' }}"
-                               class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-400 dark:hover:text-white">
+                               class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white">
                                 {{-- home icon --}}
                                 <svg class="me-2 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -138,7 +139,7 @@
                                 </svg>
                                 @if (!empty($bc['href']))
                                     <a href="{{ $bc['href'] }}"
-                                       class="ms-1 text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-400 dark:hover:text-white md:ms-2">
+                                       class="ms-1 text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white md:ms-2">
                                         {{ $bc['label'] }}
                                     </a>
                                 @else
@@ -155,23 +156,23 @@
 
         <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl md:mb-6">General overview</h2>
 
-        {{-- Overview Stats --}}
+        {{-- Overview Stats (Tetap menggunakan Flowbite/Tailwind) --}}
         <div class="grid grid-cols-2 gap-6 border-b border-t border-gray-200 py-4 dark:border-gray-700 md:py-8 lg:grid-cols-4 xl:gap-16">
             @foreach ($overviewStats as $s)
                 <div>
                     {{-- Ikon dinamis sederhana --}}
                     @switch($s['icon'])
                         @case('truck')
-                            <svg class="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h1.5L9 16m0 0h8m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8.5-3h9.25L19 7H7.312"/></svg>
+                            <svg class="mb-2 h-8 w-8 text-indigo-500 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h1.5L9 16m0 0h8m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8.5-3h9.25L19 7H7.312"/></svg>
                             @break
                         @case('star')
-                            <svg class="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" d="M11.083 5.104c.35-.8 1.485-.8 1.834 0l1.752 4.022a1 1 0 0 0 .84.597l4.463.342c.9.069 1.255 1.2.556 1.771l-3.33 2.723a1 1 0 0 0-.337 1.016l1.03 4.119c.214.858-.71 1.552-1.474 1.106l-3.913-2.281a1 1 0 0 0-1.008 0L7.583 20.8c-.764.446-1.688-.248-1.474-1.106l1.03-4.119A1 1 0 0 0 6.8 14.56l-3.33-2.723c-.698-.571-.342-1.702.557-1.771l4.462-.342a1 1 0 0 0 .84-.597l1.753-4.022Z"/></svg>
+                            <svg class="mb-2 h-8 w-8 text-indigo-500 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" d="M11.083 5.104c.35-.8 1.485-.8 1.834 0l1.752 4.022a1 1 0 0 0 .84.597l4.463.342c.9.069 1.255 1.2.556 1.771l-3.33 2.723a1 1 0 0 0-.337 1.016l1.03 4.119c.214.858-.71 1.552-1.474 1.106l-3.913-2.281a1 1 0 0 0-1.008 0L7.583 20.8c-.764.446-1.688-.248-1.474-1.106l1.03-4.119A1 1 0 0 0 6.8 14.56l-3.33-2.723c-.698-.571-.342-1.702.557-1.771l4.462-.342a1 1 0 0 0 .84-.597l1.753-4.022Z"/></svg>
                             @break
                         @case('heart')
-                            <svg class="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.01 6.001C6.5 1 1 8 5.782 13.001L12.011 20l6.23-7C23 8 17.5 1 12.01 6.002Z"/></svg>
+                            <svg class="mb-2 h-8 w-8 text-indigo-500 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.01 6.001C6.5 1 1 8 5.782 13.001L12.011 20l6.23-7C23 8 17.5 1 12.01 6.002Z"/></svg>
                             @break
                         @default
-                            <svg class="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9h13a5 5 0 0 1 0 10H7M3 9l4-4M3 9l4 4"/></svg>
+                            <svg class="mb-2 h-8 w-8 text-indigo-500 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9h13a5 5 0 0 1 0 10H7M3 9l4-4M3 9l4 4"/></svg>
                     @endswitch
 
                     <h3 class="mb-2 text-gray-500 dark:text-gray-400">{{ $s['label'] }}</h3>
@@ -190,7 +191,7 @@
             @endforeach
         </div>
 
-        {{-- Profile + Details (bagian ini mostly unik, dibiarkan) --}}
+        {{-- Profile + Details (Tetap menggunakan Flowbite/Tailwind) --}}
         <div class="py-4 md:py-8">
             <div class="mb-4 grid gap-4 sm:grid-cols-2 sm:gap-8 lg:gap-16">
                 {{-- Kiri: Avatar & Info singkat --}}
@@ -198,7 +199,8 @@
                     <div class="flex space-x-4">
                         <img class="h-16 w-16 rounded-lg" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/helene-engels.png" alt="Helene avatar" />
                         <div>
-                            <span class="mb-2 inline-block rounded bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">Akun Pembeli</span>
+                            {{-- Warna primary diganti indigo --}}
+                            <span class="mb-2 inline-block rounded bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300">Akun Pembeli</span>
                             <h2 class="flex items-center text-xl font-bold leading-none text-gray-900 dark:text-white sm:text-2xl">{{ Auth::guard('customer')->user()->name }}</h2>
                         </div>
                     </div>
@@ -247,9 +249,10 @@
                     </dl>
                 </div>
             </div>
-
+            
+            {{-- Tombol Edit (Warna primary diganti indigo) --}}
             <button type="button" data-modal-target="accountInformationModal2" data-modal-toggle="accountInformationModal2"
-                class="inline-flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:w-auto">
+                class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 sm:w-auto">
                 <svg class="-ms-0.5 me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"/></svg>
                 Edit your data
             </button>
@@ -301,7 +304,7 @@
                     <div class="w-full sm:flex sm:w-32 sm:items-center sm:justify-end sm:gap-4">
                         @php $menu = 'dropdownOrderModal'.$o['menu_id']; $btn = 'actionsMenuDropdownModal'.$o['menu_id']; @endphp
                         <button id="{{ $btn }}" data-dropdown-toggle="{{ $menu }}" type="button"
-                            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 md:w-auto">
+                            class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-indigo-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 md:w-auto">
                             Actions
                             <svg class="-me-0.5 ms-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
                         </button>
@@ -339,7 +342,7 @@
         </div>
     </div>
 
-    {{-- Account Information Modal --}}
+    {{-- Account Information Modal (Tetap menggunakan Flowbite/Tailwind) --}}
     <div id="accountInformationModal2" tabindex="-1" aria-hidden="true"
          class="max-h-auto fixed left-0 right-0 top-0 z-50 hidden h-[calc(100%-1rem)] max-h-full w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased md:inset-0">
         <div class="max-h-auto relative max-h-full w-full max-w-lg p-4">
@@ -354,31 +357,39 @@
 
                 <form class="p-4 md:p-5">
                     <div class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {{-- Input Pick-up Point --}}
                         <div class="col-span-2">
                             <label for="pick-up-point-input" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Pick-up point*</label>
-                            <input type="text" id="pick-up-point-input" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter the pick-up point name" required />
+                            <input type="text" id="pick-up-point-input" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-indigo-500 dark:focus:ring-indigo-500" placeholder="Enter the pick-up point name" required />
                         </div>
 
+                        {{-- Input Full Name --}}
                         <div class="col-span-2 sm:col-span-1">
                             <label for="full_name_info_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Your Full Name*</label>
-                            <input type="text" id="full_name_info_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter your first name" required />
+                            <input type="text" id="full_name_info_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-indigo-500 dark:focus:ring-indigo-500" placeholder="Enter your first name" required />
                         </div>
 
+                        {{-- Input Email --}}
                         <div class="col-span-2 sm:col-span-1">
                             <label for="email_info_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Your Email*</label>
-                            <input type="text" id="email_info_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter your email here" required />
+                            <input type="text" id="email_info_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-indigo-500 dark:focus:ring-indigo-500" placeholder="Enter your email here" required />
                         </div>
 
+                        {{-- Input Phone Number --}}
                         <div class="col-span-2">
                             <label for="phone-input_billing_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Phone Number*</label>
                             <div class="flex items-center">
                                 <button id="dropdown_phone_input__button_billing_modal" data-dropdown-toggle="dropdown_phone_input_billing_modal"
                                         class="z-10 inline-flex shrink-0 items-center rounded-s-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-center text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-700"
                                         type="button">
-                                    {{-- Default US Flag (dipertahankan) --}}
+                                    {{-- Default US Flag --}}
                                     <svg fill="none" aria-hidden="true" class="me-2 h-4 w-4" viewBox="0 0 20 15">
                                         <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                        <!-- … (flag path asli dipertahankan untuk ringkas) … -->
+                                        {{-- Di sini harusnya ada path SVG bendera AS yang lengkap --}}
+                                        <path fill="#0A3161" d="M.5 4.5h19.6v1H.5zM.5 6.5h19.6v1H.5zM.5 8.5h19.6v1H.5zM.5 10.5h19.6v1H.5zM.5 12.5h19.6v1H.5z"/>
+                                        <path fill="#C60C30" d="M.5.5h19.6v1H.5zM.5 2.5h19.6v1H.5z"/>
+                                        <path fill="#0A3161" d="M.5.5h8v7h-8z"/>
+                                        <path fill="#fff" d="m2.843 2.76.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM4.747 4.502l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM2.843 6.244l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM4.747 1.22l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM2.843 4.502l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM4.747 2.76l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177zM2.843 1.22l.177.544.544.177-.544.177-.177.544-.177-.544-.544-.177.544-.177z"/>
                                     </svg>
                                     +1
                                     <svg class="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
@@ -392,11 +403,10 @@
                                                     class="inline-flex w-full rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
                                                     role="menuitem">
                                                     <span class="inline-flex items-center">
-                                                        {{-- Untuk ringkas, ikon bendera tidak diulang semua path-nya.
-                                                             Bisa dibuat komponen kecil bila perlu. --}}
-                                                        <svg class="me-2 h-4 w-4" viewBox="0 0 20 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                                        </svg>
+                                                        {{-- Placeholder Bendera --}}
+                                                        <span class="me-2 h-4 w-4 text-gray-400 dark:text-gray-500">
+                                                            [Flag: {{ strtoupper($pc['flag']) }}]
+                                                        </span>
                                                         {{ $pc['label'] }}
                                                     </span>
                                                 </button>
@@ -407,80 +417,50 @@
 
                                 <div class="relative w-full">
                                     <input type="text" id="phone-input"
-                                           class="z-20 block w-full rounded-e-lg border border-s-0 border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:border-s-gray-700  dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500"
+                                           class="z-20 block w-full rounded-e-lg border border-s-0 border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:border-s-gray-700  dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-indigo-500"
                                            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890" required />
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="select_country_input_billing_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Country*</label>
-                            <select id="select_country_input_billing_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500">
-                                <option selected>United States</option>
-                                <option value="AS">Australia</option>
-                                <option value="FR">France</option>
-                                <option value="ES">Spain</option>
-                                <option value="UK">United Kingdom</option>
-                            </select>
-                        </div>
-
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="select_city_input_billing_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">City*</label>
-                            <select id="select_city_input_billing_modal" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500">
-                                <option selected>San Francisco</option>
-                                <option value="NY">New York</option>
-                                <option value="LA">Los Angeles</option>
-                                <option value="CH">Chicago</option>
-                                <option value="HU">Houston</option>
-                            </select>
-                        </div>
-
+                        {{-- Bagian modal yang terpotong (diisi placeholder) --}}
                         <div class="col-span-2">
-                            <label for="address_billing_modal" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Delivery Address*</label>
-                            <textarea id="address_billing_modal" rows="4" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter here your address"></textarea>
-                        </div>
-
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="company_name" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Company name</label>
-                            <input type="text" id="company_name" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Flowbite LLC" />
-                        </div>
-
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="vat_number" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">VAT number</label>
-                            <input type="text" id="vat_number" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="DE42313253" />
+                             <label for="address_input" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Alamat</label>
+                             <textarea id="address_input" rows="3" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-indigo-500 dark:focus:ring-indigo-500" placeholder="Alamat lengkap..."></textarea>
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-200 pt-4 dark:border-gray-700 md:pt-5">
-                        <button type="submit" class="me-2 inline-flex items-center rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Save information</button>
-                        <button type="button" data-modal-toggle="accountInformationModal2" class="me-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">Cancel</button>
-                    </div>
+                    {{-- Tombol Save Changes --}}
+                    <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800">
+                        <svg class="-ms-0.5 me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Save changes
+                    </button>
                 </form>
             </div>
         </div>
     </div>
-
-    {{-- Delete Order Modal (tanpa perubahan berarti) --}}
+    
+    {{-- Delete Order Modal (Tambahan, untuk tombol Cancel Order) --}}
     <div id="deleteOrderModal" tabindex="-1" aria-hidden="true"
-         class="fixed left-0 right-0 top-0 z-50 hidden h-modal w-full items-center justify-center overflow-y-auto overflow-x-hidden md:inset-0 md:h-full">
-        <div class="relative h-full w-full max-w-md p-4 md:h-auto">
-            <div class="relative rounded-lg bg-white p-4 text-center shadow dark:bg-gray-800 sm:p-5">
-                <button type="button" class="absolute right-2.5 top-2.5 ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="deleteOrderModal">
-                    <svg aria-hidden="true" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+         class="max-h-auto fixed left-0 right-0 top-0 z-50 hidden h-[calc(100%-1rem)] max-h-full w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased md:inset-0">
+        <div class="max-h-auto relative max-h-full w-full max-w-md p-4">
+            <div class="relative rounded-lg bg-white shadow dark:bg-gray-800">
+                <button type="button" class="absolute right-2.5 top-3 ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white" data-modal-hide="deleteOrderModal">
+                    <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
                     <span class="sr-only">Close modal</span>
                 </button>
-                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
-                    <svg class="h-8 w-8 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/></svg>
-                    <span class="sr-only">Danger icon</span>
-                </div>
-                <p class="mb-3.5 text-gray-900 dark:text-white"><a href="#" class="font-medium text-primary-700 hover:underline dark:text-primary-500">@heleneeng</a>, are you sure you want to delete this order from your account?</p>
-                <p class="mb-4 text-gray-500 dark:text-gray-300">This action cannot be undone.</p>
-                <div class="flex items-center justify-center space-x-4">
-                    <button data-modal-toggle="deleteOrderModal" type="button" class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:z-10 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-600">No, cancel</button>
-                    <button type="submit" class="rounded-lg bg-red-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Yes, delete</button>
+                <div class="p-6 text-center">
+                    <svg class="mx-auto mb-4 h-12 w-12 text-red-500 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11v8m-4-8v8m8-8v8M4 7h16m-2 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v3M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/></svg>
+                    <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to cancel this order?</h3>
+                    <button data-modal-hide="deleteOrderModal" type="button" class="me-2 inline-flex items-center rounded-lg bg-red-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">
+                        Yes, I'm sure
+                    </button>
+                    <button data-modal-hide="deleteOrderModal" type="button" class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-600">No, cancel</button>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+{{-- Catatan: Pastikan library Flowbite dan jQuery (untuk modal/dropdown) sudah di-include di layouts.app --}}
 @endsection

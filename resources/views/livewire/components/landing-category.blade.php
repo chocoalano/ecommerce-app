@@ -13,9 +13,20 @@
                 </p>
             </div>
             <div class="mt-4 sm:mt-0">
-                <flux:button href="{{ route('category') }}" icon:trailing="arrow-up-right" class="!rounded-full py-6">
+                {{-- Flux Button 'Lihat Semua' diganti dengan tag <a> --}}
+                <a href="{{ route('category') }}"
+                    class="inline-flex items-center justify-center
+                           border border-gray-300 bg-white text-gray-800 hover:bg-gray-50
+                           text-base font-semibold transition duration-300
+                           !rounded-full px-6 py-3">
                     Lihat Semua
-                </flux:button>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                        class="ml-2 h-5 w-5">
+                        <path fill-rule="evenodd"
+                            d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v4.275a.75.75 0 001.5 0V5.625a.75.75 0 00-.75-.75h-5.65a.75.75 0 000 1.5h4.275l-7.22 7.22a.75.75 0 000 1.06z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </a>
             </div>
         </div>
 
@@ -41,10 +52,21 @@
                     {{-- Footer CTA --}}
                     <div
                         class="mt-2 w-full opacity-0 translate-y-5 transition duration-300 group-hover:opacity-100 group-hover:translate-y-0">
-                        <flux:button href="{{ route('category', ['category'=>$cat['slug']]) }}" variant="primary" color="zinc" class="w-48 h-13 !rounded-full py-3"
-                            icon="chevron-right">
+                        {{-- Flux Button 'Lihat Produk' diganti dengan tag <a> --}}
+                        <a href="{{ route('category', ['category'=>$cat['slug']]) }}"
+                            class="inline-flex items-center justify-center
+                                   w-48 h-13 bg-zinc-900 text-white hover:bg-zinc-800
+                                   font-semibold transition duration-300
+                                   !rounded-full px-4 py-3 text-base">
                             Lihat Produk
-                        </flux:button>
+                            {{-- Icon chevron-right diganti dengan SVG --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                class="ml-2 h-5 w-5">
+                                <path fill-rule="evenodd"
+                                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
                     </div>
                 </div>
             @endforeach

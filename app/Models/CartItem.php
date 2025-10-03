@@ -30,7 +30,7 @@ class CartItem extends BaseModel
 
     public function variant()
     {
-        return $this->belongsTo(Variant::class);
+        return $this->belongsTo(ProductVariant::class);
     }
 
 }

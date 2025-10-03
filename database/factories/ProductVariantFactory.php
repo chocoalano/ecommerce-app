@@ -37,6 +37,7 @@ class ProductVariantFactory extends Factory
             'width_mm'        => $this->faker->numberBetween(50, 400),
             'height_mm'       => $this->faker->numberBetween(10, 300),
             'is_active'       => $this->faker->boolean(90),      // cast: integer (0/1)
+            'stock'       => $this->faker->numberBetween(10, 300),
         ];
     }
 

@@ -10,7 +10,7 @@ class ProductVariant extends BaseModel
 
     protected $fillable = [
         'product_id','variant_sku','name','attributes_json',
-        'base_price','currency','weight_gram','length_mm','width_mm','height_mm','is_active',
+        'base_price','currency','weight_gram','length_mm','width_mm','height_mm','is_active','stock',
     ];
 
     protected $casts = [

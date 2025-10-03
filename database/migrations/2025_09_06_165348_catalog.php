@@ -105,6 +105,7 @@ return new class extends Migration
             $table->integer('width_mm')->nullable()->comment('Lebar (mm)');
             $table->integer('height_mm')->nullable()->comment('Tinggi (mm)');
             $table->boolean('is_active')->default(true)->comment('Status aktif variant');
+            $table->integer('stock')->nullable()->comment('Persediaan stok variant');
             $table->timestamps();
             $table->comment('Daftar variasi produk');
         });

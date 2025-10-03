@@ -11,7 +11,6 @@
 
     {{-- Wajib: Livewire sebelum Flux --}}
     @livewireScripts
-    @fluxScripts
 </body>
 
 </html>

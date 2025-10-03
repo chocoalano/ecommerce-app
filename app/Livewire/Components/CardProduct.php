@@ -6,7 +6,7 @@ use Livewire\Component;
 
 class CardProduct extends Component
 {
-    public int $id;
+    public string $sku;
     public string $title;
     public string $image;
     public string $price;

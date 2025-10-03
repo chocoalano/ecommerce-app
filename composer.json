@@ -11,8 +11,7 @@
         "codeat3/blade-elusive-icons": "^1.5",
         "filament/filament": "^4.0",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1",
-        "livewire/flux": "^2.4"
+        "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
         "doctrine/dbal": "^4.3",

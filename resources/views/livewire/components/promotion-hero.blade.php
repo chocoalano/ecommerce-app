@@ -1,53 +1,53 @@
-@props([
-    // Konten dinamis
-    'title' => '2025 AI TVs',
-    'subtitle' => 'Explore new AI TVs',
-    'primary' => ['label' => 'Lebih detail', 'href' => '#'],
-    'secondary' => ['label' => 'Lihat semua', 'href' => '#'],
-    'image' => null,
-    'imageAlt' => 'Hero image',
-    'containerClass' => '',
-])
-
 @php
     // Perbaikan: Tailwind tidak punya kelas max-w-5/6 ⇒ gunakan width kustom via arbitrary value
-    $outerClass = 'relative max-w-5/6 mx-auto h-full max-h-dvh bg-gray-100 text-gray-900 flex items-center justify-center p-16 overflow-hidden rounded-xl';
+    // Menggunakan warna background dan skema yang umum di Flowbite (gray/indigo)
+    $outerClass = 'mx-auto max-w-5/6 px-4 mx-auto h-full max-h-dvh bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex items-center justify-center p-16 overflow-hidden rounded-xl';
     $computedImage = $image
         ? (Str::startsWith($image, ['http://', 'https://', '/']) ? $image : asset($image))
-        : asset('images/galaxy-z-flip7-share-image.png');
+        : asset('storage/images/galaxy-z-flip7-share-image.png');
 @endphp
 
-<div {{ $attributes->class($outerClass)->merge(['class' => $containerClass]) }}>
-    <div class="w-full max-w-[83.333%] md:max-w-[80%] lg:max-w-[72rem]">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-24 items-center">
+<div class="{{ $outerClass }} {{ $containerClass }}">
+    {{-- Container utama (diperluas untuk Dark Mode) --}}
+    <div class="w-full max-w-[83.333%] md:max-w-[80%] lg:max-w-[72rem] z-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 lg:gap-x-24 items-center">
+            {{-- Konten Teks --}}
             <div class="flex flex-col space-y-6 md:space-y-8">
-                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-gray-900 dark:text-white">
                     {{ $title }}
                 </h1>
 
                 @if(!empty($subtitle))
-                    <p class="text-lg md:text-xl lg:text-2xl text-gray-600">
+                    <p class="text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-400">
                         {{ $subtitle }}
                     </p>
                 @endif
 
+                {{-- Call to Action Buttons (Menggunakan styling Flowbite) --}}
                 <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
                     @if(!empty($primary['href']) && !empty($primary['label']))
+                        {{-- Tombol Primer (Flowbite Default/Indigo Style) --}}
                         <a href="{{ $primary['href'] }}"
-                           class="px-6 py-3 border border-gray-900 text-gray-900 font-medium rounded-full hover:bg-gray-200 transition duration-300 text-center">
+                           class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-center text-white
+                                  bg-zinc-900 rounded-lg hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300
+                                  transition duration-300">
                             {{ $primary['label'] }}
                         </a>
                     @endif
 
                     @if(!empty($secondary['href']) && !empty($secondary['label']))
+                        {{-- Tombol Sekunder (Flowbite Outline/Grey Style) --}}
                         <a href="{{ $secondary['href'] }}"
-                           class="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition duration-300 text-center">
+                           class="inline-flex items-center justify-center px-5 py-3 text-base font-medium text-center text-gray-900
+                                  border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 dark:text-white dark:border-gray-700
+                                  dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition duration-300">
                             {{ $secondary['label'] }}
                         </a>
                     @endif
                 </div>
             </div>
 
+            {{-- Gambar --}}
             <div class="relative flex items-center justify-center mt-10 md:mt-0">
                 <img
                     src="{{ $computedImage }}"
@@ -60,7 +60,8 @@
         </div>
     </div>
 
-    <div class="absolute bottom-8 left-8 text-gray-400" aria-hidden="true">
+    {{-- Detail/Decorative Icon (Flowbite style, disamakan dengan Dark Mode) --}}
+    <div class="absolute bottom-8 left-8 text-gray-400 dark:text-gray-600 z-10" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
              viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
