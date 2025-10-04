@@ -4,8 +4,8 @@
         {{-- KIRI: BRAND & NAVIGASI (Desktop) --}}
         <div class="flex items-center space-x-4 rtl:space-x-reverse shrink-0">
             <a href="{{ url('/') }}" class="flex items-center space-x-2 rtl:space-x-reverse">
-                <img src="https://flowbite.com/docs/images/logo.svg" class="h-7 alt="Toko Logo" />
-                <span class="self-center text-xl font-bold whitespace-nowrap text-zinc-800">TokoZinc</span>
+                <img src="{{ asset('images/logo-puranura-id.png') }}" class="h-10" alt="{{ config('app.name') }}" />
+                <span class="self-center text-xl font-bold whitespace-nowrap text-zinc-800">{{ config('app.name') }}</span>
             </a>
 
             {{-- Dropdown Kategori Desktop --}}
