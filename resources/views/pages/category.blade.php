@@ -311,30 +311,30 @@
                 </div>
 
                 {{-- PRODUCT GRID --}}
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                    @forelse($products as $product)
-                        @php
-                            $image  = optional($product->productMedia->first())->url;              // hasMany productMedia
-                            $price  = $product->min_price;                                         // MIN(COALESCE(...))
-                            $rating = $product->avg_rating ? round($product->avg_rating, 1) : null;// withAvg
-                        @endphp
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                @forelse($products as $product)
+                    @php
+                        $image  = optional($product->productMedia->first())->url;              // hasMany productMedia
+                        $price  = $product->min_price;                                         // MIN(COALESCE(...))
+                        $rating = $product->avg_rating ? round($product->avg_rating, 1) : null;// withAvg
+                    @endphp
 
-                        <livewire:components.card-product
-                            :sku="$product->sku"
-                            :title="$product->name"
-                            :price="'Rp ' . number_format((float)$price, 0, ',', '.')"
-                            :image="$image"
-                            :rating="$rating"
-                        />
-                    @empty
-                        <div class="col-span-full">
-                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-10 text-center">
-                                <h3 class="text-lg font-medium text-gray-900">Produk belum tersedia</h3>
-                                <p class="mt-1 text-gray-500">Coba ubah filter atau kembali beberapa saat lagi.</p>
-                            </div>
+                    <livewire:components.card-product
+                        :sku="$product->sku"
+                        :title="$product->name"
+                        :price="'Rp ' . number_format((float)$price, 0, ',', '.')"
+                        :image="$image"
+                        :rating="$rating"
+                    />
+                @empty
+                    <div class="col-span-full">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-10 text-center">
+                            <h3 class="text-lg font-medium text-gray-900">Produk belum tersedia</h3>
+                            <p class="mt-1 text-gray-500">Coba ubah filter atau kembali beberapa saat lagi.</p>
                         </div>
-                    @endforelse
-                </div>
+                    </div>
+                @endforelse
+            </div>
 
                 {{-- Pagination --}}
                 <div class="mt-12">

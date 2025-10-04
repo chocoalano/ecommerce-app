@@ -165,8 +165,8 @@
                         $wishlistRoute = \Illuminate\Support\Facades\Route::has('product.wishlist') ? 'product.wishlist' : 'product.wislist';
                     @endphp
                     <a href="{{ route($wishlistRoute, ['id' => $product->id]) }}"
-                       class="inline-flex items-center justify-center sm:flex-1 px-6 py-3 text-base font-semibold text-center text-gray-900
-                              border border-gray-300 rounded-full hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 transition duration-300">
+                        class="inline-flex items-center justify-center w-full sm:flex-1 px-6 py-3 text-base font-semibold text-center text-gray-900
+                                border border-gray-300 rounded-full hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 transition duration-300">
                         <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-.318-.318a4.5 4.5 0 00-6.364 0z"/>
                         </svg>
@@ -186,24 +186,26 @@
                         <input type="hidden" id="variant_id_hidden" name="variant_id" value="{{ $defaultVariantId }}">
                         <input type="hidden" id="meta_color_hidden" name="meta_json[color]" value="">
 
-                        <div class="flex items-stretch gap-3">
+                        <div class="flex flex-col sm:flex-row items-stretch gap-3">
                             {{-- Qty stepper --}}
-                            <div class="flex items-center border border-gray-300 rounded-full overflow-hidden">
-                                <button type="button" class="px-3 py-2 text-gray-700 hover:bg-gray-100" data-qty-dec>-</button>
+                            {{-- w-full agar mengisi lebar saat di mode vertikal (sm:flex-row) --}}
+                            <div class="flex items-center justify-between sm:justify-start border border-gray-300 rounded-full overflow-hidden sm:flex-none">
+                                <button type="button" class="px-4 py-3 text-gray-700 hover:bg-gray-100" data-qty-dec>-</button>
                                 <input type="number" name="qty" id="qty" min="1" value="1"
-                                       class="w-16 text-center outline-none border-0"
-                                       {{ $isOutOfStock ? 'disabled' : '' }}>
-                                <button type="button" class="px-3 py-2 text-gray-700 hover:bg-gray-100" data-qty-inc>+</button>
+                                    class="w-16 text-center outline-none border-0 text-base font-medium"
+                                    {{ $isOutOfStock ? 'disabled' : '' }}>
+                                <button type="button" class="px-4 py-3 text-gray-700 hover:bg-gray-100" data-qty-inc>+</button>
                             </div>
 
                             {{-- Submit --}}
                             <button type="submit"
-                                    class="inline-flex items-center justify-center flex-1 px-6 py-3 text-base font-semibold text-center text-white
-                                           bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300 disabled:opacity-60"
-                                    {{ $isOutOfStock ? 'disabled' : '' }}>
+                                {{-- Kelas-kelas ini sudah memastikan responsivitas penuh --}}
+                                class="inline-flex items-center justify-center flex-1 w-full px-6 py-3 text-base font-semibold text-center text-white
+                                    bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300 disabled:opacity-60"
+                                {{ $isOutOfStock ? 'disabled' : '' }}>
                                 <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
                                 Tambah ke Keranjang
                             </button>
@@ -286,8 +288,7 @@
 
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <p class="text-sm text-gray-700 mb-3">Bagikan pengalaman Anda tentang produk ini.</p>
-                        <button type="button"
-                            class="w-full inline-flex items-center justify-center py-3 text-base font-semibold text-center text-white
+                        <button type="button" class="w-full inline-flex items-center justify-center py-3 text-base font-semibold text-center text-white
                               bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300">
                             Tulis Ulasan Anda
                         </button>

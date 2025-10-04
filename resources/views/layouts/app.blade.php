@@ -5,7 +5,7 @@
     @include('layouts.partials.head') {{-- pastikan di dalamnya sudah ada @fluxAppearance, @vite, @livewireStyles --}}
 </head>
 
-<body class="min-h-screen bg-white dark:bg-zinc-800 antialiased">
+<body class="min-h-screen bg-white antialiased">
 
     @includeIf('layouts.partials.header')
     @includeIf('layouts.partials.sidebar')
