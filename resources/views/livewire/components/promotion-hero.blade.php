@@ -8,7 +8,7 @@
 @endphp
 
 <div class="{{ $outerClass }} {{ $containerClass }}">
-    {{-- Container utama (diperluas untuk Dark Mode) --}}
+    {{-- Container utama --}}
     <div class="w-full max-w-[83.333%] md:max-w-[80%] lg:max-w-[72rem] z-20">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 lg:gap-x-24 items-center">
             {{-- Konten Teks --}}
@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    {{-- Detail/Decorative Icon (Flowbite style, disamakan dengan Dark Mode) --}}
+    {{-- Detail/Decorative Icon (Flowbite style) --}}
     <div class="absolute bottom-8 left-8 text-gray-400 z-10" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
              viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
