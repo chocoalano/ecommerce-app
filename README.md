@@ -1,3 +1,27 @@
+Development Tahap 1
+
+- [ ] Ubah struktur table produk, buat table produk menjadi satu table tanpa relasi table varian.
+- [ ] Ubah struktur table keranjang belanja, buat table keranjang belanja menjadi relasi hasMany antara (cart -> cart_products).
+- [ ] Ubah struktur table wishlist belanja, buat table wishlist belanja menjadi relasi hasMany antara (wishlist -> wishlist_products).
+- [ ] Tambahkan table Artikel lengkap dengan komposisi SEO FRIANDLY.
+- [ ] Buat konsep repository pattern agar mudah integrasi pada pembuatan restApi untuk mobile application (Android & IOS).
+- [ ] Primary colour menggunakan ZINC 900 ( #18181B )
+
+
+SERVER TARGET
+
+Server	https://puranusa.id:8443/login_up.php
+Username	alan@puranusa.id
+Password	w88L14og#
+
+SERVER TASK
+
+- [ ] Sync GIT(server) dengan Github
+- [ ] SSL Activation
+- [ ] Midtrans API/Payment Gateway Account
+- [ ] Raja Ongkir Api Account
+
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
