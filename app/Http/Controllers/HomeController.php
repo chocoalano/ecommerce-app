@@ -2,281 +2,131 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Promotion;
-use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
+use App\Models\Product\Category;
+use App\Models\Product\Product;
+use App\Models\Promo\Promotion;
+use App\Services\PromotionService;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
+    protected $promotionService;
+
+    public function __construct(PromotionService $promotionService)
+    {
+        $this->promotionService = $promotionService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $activeCategories = Category::where('is_active', true)->get();
-        $count = $activeCategories->count();
-        $half = ceil($count / 2);
+        // 1. Ambil Data Promo Utama dengan cache
+        $promo1 = Cache::remember('promo:hero_1', 300, function () {
+            return $this->promotionService->getPromotionSlot('HERO_1')
+                ?? $this->promotionService->getPromotionSlot('HERO');
+        });
 
-        $categoriesFirst  = $activeCategories->take($half);
-        $categoriesSecond = $activeCategories->skip($half);
+        $promo2 = Cache::remember('promo:hero_2', 300, function () use ($promo1) {
+            return $this->promotionService->getPromotionSlot('HERO_2')
+                ?? $this->promotionService->getSecondHeroPromo($promo1);
+        });
 
-        $hero = Promotion::where([
-                                'is_active'=> true,
-                                'show_on'=> 'HERO',
-                                'page'=> 'beranda',
-                                ])
-                            ->first();
-        $activePromotion = Promotion::where([
-                                'is_active'=> true,
-                                'show_on'=> 'BANNER',
-                                'page'=> 'beranda',
-                                ])->get();
-        $promo = ceil($activePromotion->count() / 2);
-
-        $promoFirst  = $activePromotion->take($half);
-        $promoSecond = $activePromotion->skip($half);
-        return view('pages.home', [
-            'categoriesFirst'=>$categoriesFirst,
-            'categoriesSecond'=>$categoriesSecond,
-            'hero'=>$hero,
-            'promoFirst'=>$promoFirst,
-            'promoSecond'=>$promoSecond
-        ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Request $request)
-    {
-        $products = [
-            [
-                'id' => 1,
-                'name' => 'Galaxy S25 Ultra',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp22.999.000',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Galaxy Z Fold7',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp27.999.000',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Galaxy S24 Ultra',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp16.999.000',
-            ],
-            [
-                'id' => 4,
-                'name' => 'Galaxy S25 Ultra (Samsung.com only)',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp22.999.000',
-            ],
-            [
-                'id' => 5,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 6,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 7,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 8,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 9,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 10,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 11,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 12,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 13,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 14,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 15,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 16,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 17,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 18,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 19,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 20,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 21,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 22,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 23,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 24,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-            [
-                'id' => 25,
-                'name' => 'Galaxy A56 5G',
-                'image' => asset('images/galaxy-z-flip7-share-image.png'),
-                'price' => 'Rp6.199.000',
-            ],
-        ];
-
-        // Contoh untuk membuat data menjadi Pagination
-        $perPage = 5;
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $currentProducts = array_slice($products, ($currentPage - 1) * $perPage, $perPage);
-
-        $paginatedProducts = new LengthAwarePaginator(
-            $currentProducts,
-            count($products),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
+        // 2. Format Data Promo untuk View (tidak perlu cache, hasil promo sudah cache)
+        $p1Data = $this->promotionService->formatPromotionProps(
+            $promo1,
+            'Promo Unggulan',
+            'Penawaran terbaik minggu ini.'
         );
-        return view('pages.category', ['products' => $paginatedProducts]);
+
+        $p2Data = $this->promotionService->formatPromotionProps(
+            $promo2,
+            'Welcome to Our Store!',
+            'Temukan penawaran terbaik dan produk terbaru kami.'
+        );
+
+        // 3. Ambil Produk Rekomendasi (sudah cache di getRecommendedProducts)
+        $recommendedProducts = $this->getRecommendedProducts();
+
+        // 4. Data Hero dengan cache
+        $heroData = Cache::remember('hero:data', 300, function () {
+            $hero = Promotion::with('products')
+                ->select(['id', 'name', 'type', 'description'])
+                ->where('show_on', 'HERO')
+                ->first();
+            $heroProductMediaUrl = asset('images/smartphone.png');
+            if (! empty($hero?->products) && ! empty($hero->products[0]->media)) {
+                $heroProductMediaUrl = $hero->products[0]->media[0]->url ?? asset('images/smartphone.png');
+            }
+
+            return [
+                'hero' => $hero,
+                'heroTitle' => $hero?->name ?? 'Upgrade Ponsel Lama Anda',
+                'heroType' => $hero?->type ?? 'Special Offer',
+                'heroDesc' => $hero?->description ?? 'Dapatkan diskon besar dengan Trade-in eksklusif kami!',
+                'heroTag' => null,
+                'heroImg' => $heroProductMediaUrl,
+                'heroLink' => $hero?->link_url ?? route('products.index'),
+                'heroMore' => '#',
+                'products' => $hero?->products ?? [],
+            ];
+        });
+
+        // 5. Data Kategori dengan cache
+        $categoriesFirst = Cache::remember('categories:first', 300, function () {
+            return Category::query()
+                ->where('is_active', true)
+                ->orderBy('id', 'asc')
+                ->limit(6)
+                ->get();
+        });
+
+        $categoriesSecond = Cache::remember('categories:second', 300, function () use ($categoriesFirst) {
+            return Category::query()
+                ->where('is_active', true)
+                ->whereNotIn('id', $categoriesFirst->pluck('id'))
+                ->orderBy('id', 'desc')
+                ->limit(6)
+                ->get();
+        });
+
+        return view('pages.home', compact(
+            'heroData', 'p1Data', 'p2Data', 'recommendedProducts',
+            'categoriesFirst', 'categoriesSecond'
+        ));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Query dan format produk rekomendasi dengan cache 5 menit.
      */
-    public function register()
+    protected function getRecommendedProducts(): array
     {
-        return view('pages.auth.register');
-    }
+        return Cache::remember('products:recommended:10', 300, function () {
+            return Product::query()
+                ->select(['id', 'sku', 'name', 'slug', 'created_at', 'base_price'])
+                ->with([
+                    'primaryMedia:id,product_id,url',
+                    'reviews:id,product_id,rating',
+                ])
+                ->withAvg('reviews as avg_rating', 'rating')
+                ->where('is_active', true)
+                ->latest('id')
+                ->limit(10)
+                ->get()
+                ->map(function ($p) {
+                    $image = optional($p->primaryMedia)->url ?: asset('images/galaxy-z-flip7-share-image.png');
+                    $rawPrice = $p->base_price ?? 0;
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function login()
-    {
-        return view('pages.auth.login');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function login_submit(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-        $guard = Auth::guard('customer');
-        if ($guard->attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended(route('auth.profile'));
-
-        }
-        throw ValidationException::withMessages([
-            'email' => 'Email atau kata sandi yang Anda masukkan salah.',
-        ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function profile()
-    {
-        return view('pages.auth.profile');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+                    return [
+                        'sku' => $p->sku,
+                        'title' => $p->name,
+                        'image' => $image,
+                        'price' => 'Rp'.number_format((float) $rawPrice, 0, ',', '.'),
+                        'rating' => $p->avg_rating ? round($p->avg_rating, 1) : null,
+                    ];
+                })
+                ->toArray();
+        });
     }
 }

@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('event_type', 100)->nullable()->comment('Jenis event (mis. LOGIN, ORDER_PLACED, PAYMENT_FAILED)');
             $table->string('entity', 100)->nullable()->comment('Nama entitas terkait event (mis. orders, payments)');
             $table->unsignedBigInteger('entity_id')->nullable()->comment('ID entitas terkait event');
-            $table->json('data_json')->nullable()->comment('Payload data tambahan dalam JSON (before/after state, metadata)');
             $table->timestamp('created_at')->useCurrent()->comment('Waktu event tercatat');
 
             $table->comment('Audit log untuk menyimpan riwayat event & aktivitas sistem');

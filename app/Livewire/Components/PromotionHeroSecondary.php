@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Components;
 
+use App\Models\Promo\Promotion;
 use Livewire\Component;
-use App\Models\Promotion;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -62,7 +62,7 @@ class PromotionHeroSecondary extends Component
         $ctaLabel = data_get($promo, 'cta_label', 'Jelajahi Sekarang');
         $ctaUrl   = data_get($promo, 'cta_url');
         if (!$ctaUrl && $slug && Route::has('category')) {
-            $ctaUrl = route('category', ['category' => $slug]);
+            $ctaUrl = route('products.index', ['category' => $slug]);
         }
         $ctaUrl = $ctaUrl ?: '#';
 

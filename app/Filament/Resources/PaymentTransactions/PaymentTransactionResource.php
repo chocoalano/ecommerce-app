@@ -3,90 +3,81 @@
 namespace App\Filament\Resources\PaymentTransactions;
 
 use App\Filament\Resources\PaymentTransactions\Pages\ManagePaymentTransactions;
-use App\Models\PaymentTransaction;
+use App\Models\OrderProduct\PaymentTransaction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class PaymentTransactionResource extends Resource
 {
     protected static ?string $model = PaymentTransaction::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pesanan';
-
-    protected static ?string $recordTitleAttribute = 'PyamentTransaction';
+    protected static string | UnitEnum | null $navigationGroup = 'Penjualan';
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('payment_id')
-                    ->required()
-                    ->numeric(),
-                Select::make('status')
-                    ->options([
-            'INITIATED' => 'I n i t i a t e d',
-            'AUTHORIZED' => 'A u t h o r i z e d',
-            'CAPTURED' => 'C a p t u r e d',
-            'FAILED' => 'F a i l e d',
-            'CANCELED' => 'C a n c e l e d',
-            'REFUNDED' => 'R e f u n d e d',
-            'PARTIAL_REFUND' => 'P a r t i a l  r e f u n d',
-        ])
-                    ->required(),
-                TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('raw_json'),
-            ]);
-    }
-
-    public static function infolist(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                TextEntry::make('payment_id')
-                    ->numeric(),
-                TextEntry::make('status'),
-                TextEntry::make('amount')
-                    ->numeric(),
-                TextEntry::make('created_at')
-                    ->dateTime(),
-            ]);
+        return $schema->components([
+            Select::make('payment_id')
+                ->relationship('payment', 'id')
+                ->label('Payment')
+                ->helperText('Relasi ke payment utama untuk transaksi ini')
+                ->required(),
+            Select::make('status')
+                ->options([
+                    'PENDING'   => 'Pending',
+                    'SUCCESS'   => 'Success',
+                    'FAILED'    => 'Failed',
+                    'EXPIRED'   => 'Expired',
+                ])
+                ->label('Status')
+                ->helperText('Status transaksi pembayaran (Pending, Success, Failed, Expired)')
+                ->required(),
+            TextInput::make('amount')
+                ->numeric()
+                ->label('Amount')
+                ->helperText('Nominal transaksi (dalam satuan mata uang)')
+                ->required(),
+            Textarea::make('raw_json')
+                ->label('Raw JSON')
+                ->helperText('Payload data mentah dari gateway/payment (format JSON)')
+                ->rows(4),
+            DateTimePicker::make('created_at')
+                ->label('Created At')
+                ->helperText('Waktu transaksi tercatat')
+                ->required(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('PyamentTransaction')
             ->columns([
-                TextColumn::make('payment_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('status'),
-                TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('payment.status')->label('Payment Status')->sortable(),
+                TextColumn::make('status')->sortable(),
+                TextColumn::make('amount')->label('Amount')->sortable(),
+                TextColumn::make('created_at')->dateTime()->label('Created At'),
             ])
             ->filters([
-                //
+                SelectFilter::make('status')
+                    ->options([
+                        'PENDING'   => 'Pending',
+                        'SUCCESS'   => 'Success',
+                        'FAILED'    => 'Failed',
+                        'EXPIRED'   => 'Expired',
+                    ]),
             ])
             ->recordActions([
-                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

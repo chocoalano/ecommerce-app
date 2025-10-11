@@ -4,8 +4,8 @@
 @php
     // ====== DATA SEMENTARA (bisa diganti dari Controller) ======
     $breadcrumbs = [
-        ['label' => 'Home', 'href' => '#'],
-        ['label' => 'My account', 'href' => '#'],
+        ['label' => 'Beranda', 'href' => route('home')],
+        ['label' => 'Profil', 'href' => route('auth.profile')],
         ['label' => 'Account', 'href' => null], // current
     ];
 

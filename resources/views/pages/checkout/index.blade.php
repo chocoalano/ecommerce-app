@@ -2,7 +2,8 @@
 
 @section('content')
 @php
-    $items = $cart->cartItems;
+    /** @var \App\Models\CartProduct\Cart $cart */
+    $items = $cart->items; // Menggunakan relationship items() dari Cart model
     $fmt = fn($a) => 'Rp' . number_format((float)$a, 0, ',', '.');
 
     $subtotal = $cart->subtotal_amount ?? $items->sum(fn($i) => (float)$i->row_total);
@@ -95,29 +96,43 @@
                         </svg>
                         Pilih Metode Pembayaran
                     </h2>
+
                     @php
+                        // Load payment methods dari database atau hardcode
                         $methods = [
-                            'bank_transfer' => 'Bank Transfer (VA)',
-                            'credit_card'   => 'Kartu Kredit / Debit',
-                            'e_wallet'      => 'E-Wallet (GoPay/ShopeePay)',
-                            'cod'           => 'COD (Bayar di Tempat)',
+                            ['code' => 'bank_transfer', 'name' => 'Bank Transfer (VA)', 'is_active' => true],
+                            ['code' => 'credit_card', 'name' => 'Kartu Kredit / Debit', 'is_active' => true],
+                            ['code' => 'e_wallet', 'name' => 'E-Wallet (GoPay/ShopeePay)', 'is_active' => true],
+                            ['code' => 'cod', 'name' => 'COD (Bayar di Tempat)', 'is_active' => true],
+                            ['code' => 'midtrans', 'name' => 'Midtrans (Kartu Kredit / Debit)', 'is_active' => true],
                         ];
+                        // Jika ada PaymentMethod model loaded: $methods = $paymentMethods ?? [];
                     @endphp
+
                     <div class="space-y-3">
-                        @foreach ($methods as $key => $label)
-                            <label class="flex items-center justify-between p-4 border border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-150">
-                                <div class="flex items-center space-x-3">
-                                    <input type="radio" name="payment_method" value="{{ $key }}" class="size-5 text-zinc-700 focus:ring-zinc-700 border-gray-300" {{ old('payment_method') === $key ? 'checked' : '' }} required>
-                                    <span class="font-semibold text-gray-800">{{ $label }}</span>
-                                </div>
-                            </label>
+                        @foreach ($methods as $method)
+                            @if($method['is_active'])
+                                <label class="flex items-center justify-between p-4 border border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-150">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="payment_method" value="{{ $method['code'] }}"
+                                               class="size-5 text-zinc-700 focus:ring-zinc-700 border-gray-300"
+                                               {{ old('payment_method') === $method['code'] ? 'checked' : '' }} required>
+                                        <span class="font-semibold text-gray-800">{{ $method['name'] }}</span>
+                                    </div>
+                                </label>
+                            @endif
                         @endforeach
                     </div>
                 </section>
 
                 <div class="flex justify-end">
                     <button type="submit" id="btn-pay"
-                        class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-center text-white bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300">
+                        class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-center text-white bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300"
+                        onclick="return handleCheckoutSubmit(this);">
+                        <svg class="w-5 h-5 mr-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l4 2"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+                        </svg>
                         Bayar Sekarang ({{ $fmt($total) }})
                     </button>
                 </div>
@@ -130,13 +145,42 @@
                 <h2 class="text-xl font-bold text-gray-900 mb-6 border-b pb-4">Ringkasan Pesanan</h2>
 
                 <div class="space-y-4 mb-6">
-                    @foreach ($items as $it)
+                    @foreach ($items as $item)
                         @php
-                            $title = $it->variant->product->name ?? ('Variant #'.$it->variant_id);
+                            /** @var \App\Models\CartProduct\CartItem $item */
+                            $product = $item->product;
+                            $title = $product?->name ?? $item->product_name ?? ('Item #'.$item->product_id);
+                            $image = $product?->primary_image_url ?? $product?->media->first()?->url ?? null;
+
+                            // Format variant/options info
+                            $variantInfo = '';
+                            if (!empty($item->options) && is_array($item->options)) {
+                                $variantInfo = collect($item->options)
+                                    ->map(fn($v, $k) => ucfirst($k) . ': ' . $v)
+                                    ->implode(', ');
+                            }
+                            if ($item->bundle_name) {
+                                $variantInfo = $variantInfo ? $variantInfo . ', Bundle: ' . $item->bundle_name : 'Bundle: ' . $item->bundle_name;
+                            }
                         @endphp
-                        <div class="flex justify-between items-start text-sm">
-                            <span class="text-gray-700 pr-2 line-clamp-2">{{ $title }} (x{{ $it->qty }})</span>
-                            <span class="font-semibold text-gray-900 flex-shrink-0">{{ $fmt($it->row_total) }}</span>
+                        <div class="flex items-start space-x-3">
+                            @if($image)
+                                <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                    <img src="{{ $image }}" alt="{{ $title }}" class="w-full h-full object-cover">
+                                </div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-start text-sm">
+                                    <div class="pr-2">
+                                        <span class="text-gray-900 font-medium line-clamp-2">{{ $title }}</span>
+                                        @if($variantInfo)
+                                            <div class="text-xs text-gray-500 mt-1">{{ $variantInfo }}</div>
+                                        @endif
+                                        <div class="text-xs text-gray-600 mt-1">Qty: {{ $item->qty }}</div>
+                                    </div>
+                                    <span class="font-semibold text-gray-900 flex-shrink-0">{{ $fmt($item->row_total) }}</span>
+                                </div>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -149,7 +193,7 @@
                     @if($discount > 0)
                         <div class="flex justify-between text-gray-700">
                             <span>Diskon:</span>
-                            <span class="font-medium text-gray-900">-{{ $fmt($discount) }}</span>
+                            <span class="font-medium text-green-600">-{{ $fmt($discount) }}</span>
                         </div>
                     @endif
                     <div class="flex justify-between text-gray-700">
@@ -174,9 +218,109 @@
 </div>
 
 <script>
-document.getElementById('checkout-form')?.addEventListener('submit', function(){
-  const btn = document.getElementById('btn-pay');
-  if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
+// Handle checkout form submission
+function handleCheckoutSubmit(button) {
+    // Validate required fields
+    const form = document.getElementById('checkout-form');
+    if (!form) return false;
+
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalidField = null;
+
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            if (!firstInvalidField) firstInvalidField = field;
+            field.classList.add('border-red-500');
+        } else {
+            field.classList.remove('border-red-500');
+        }
+    });
+
+    if (!isValid) {
+        showToast('Mohon lengkapi semua field yang wajib diisi.', 'error');
+        if (firstInvalidField) {
+            firstInvalidField.focus();
+            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return false;
+    }
+
+    // Show loading state
+    const originalContent = button.innerHTML;
+    button.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Memproses Pembayaran...
+    `;
+    button.disabled = true;
+
+    // Submit form via fetch for better error handling
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            return response.json().then(data => Promise.reject(data));
+        }
+    })
+    .then(data => {
+        if (data.success && data.redirect_url) {
+            showToast('Pesanan berhasil dibuat! Mengalihkan ke halaman pembayaran...', 'success');
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 1500);
+        } else if (data.order_id) {
+            showToast('Pesanan berhasil dibuat!', 'success');
+            setTimeout(() => {
+                window.location.href = data.redirect_url || '/checkout/thank-you/' + data.order_id;
+            }, 1500);
+        } else {
+            // Fallback to normal form submission
+            form.submit();
+        }
+    })
+    .catch(error => {
+        console.error('Checkout error:', error);
+
+        // Reset button state
+        button.innerHTML = originalContent;
+        button.disabled = false;
+
+        if (error.message) {
+            showToast(error.message, 'error');
+        } else if (error.errors) {
+            // Validation errors
+            const errorMessages = Object.values(error.errors).flat();
+            showToast('Terjadi kesalahan: ' + errorMessages.join(', '), 'error');
+        } else {
+            showToast('Terjadi kesalahan saat memproses checkout. Silakan coba lagi.', 'error');
+        }
+    });
+
+    return false; // Prevent default form submission
+}
+
+// Legacy support for old event listener
+document.getElementById('checkout-form')?.addEventListener('submit', function(e){
+    e.preventDefault();
+    const btn = document.getElementById('btn-pay');
+    if (btn) {
+        handleCheckoutSubmit(btn);
+    }
 });
 </script>
 @endsection

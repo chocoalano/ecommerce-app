@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Cart\AddManyToCartRequest;
 use App\Http\Requests\Cart\AddToCartRequest;
-use App\Models\Cart;
-use App\Models\CartItem;
+use App\Models\CartProduct\Cart;
+use App\Models\CartProduct\CartItem;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +15,12 @@ class CartController extends Controller
     public function index()
     {
         // Ambil cart berdasar user login atau session id aktif
-        $cart = Cart::with(['cartItems.variant.product'])->firstWhere([
-            'user_id' => auth()->guard('customer')->id(),
-        ]) ?? Cart::with(['cartItems.variant.product'])->firstWhere([
+        $cart = Cart::with(['items.product'])->firstWhere([
+            'customer_id' => auth()->guard('customer')->id(),
+        ]) ?? Cart::with(['items.product'])->firstWhere([
             'session_id' => session()->getId(),
         ]);
+
         return view('pages.auth.cart', compact('cart'));
     }
 
@@ -28,49 +29,89 @@ class CartController extends Controller
      */
     public function store(AddToCartRequest $request, CartService $svc)
     {
-        // Pastikan session_id terisi bila user belum login
-        $userId    = Auth::guard('customer')->id();
-        $sessionId = session()->getId();
+        try {
+            $userId = Auth::guard('customer')->id();
+            $sessionId = session()->getId();
 
-        $cart = Cart::firstOrCreate(
-            [
-                'user_id'    => $userId,
-                'session_id' => $userId ? null : $sessionId, // bila login, kosongkan session_id agar unik
-            ],
-            [
-                'currency' => $request->input('currency', 'IDR'),
-            ]
-        );
+            // Ensure we have either user ID or session ID
+            if (!$userId) {
+                throw new \Exception('No valid user or session identifier', 401);
+            }
 
-        if ($cart->currency !== strtoupper($request->input('currency', $cart->currency))) {
-            $cart->currency = strtoupper($request->input('currency', $cart->currency));
-            $cart->save();
-        }
-
-        $svc->addItem(
-            $cart,
-            (int) $request->variant_id,
-            (int) $request->qty,
-            (array) $request->input('meta_json', [])
-        );
-
-        // Response untuk AJAX
-        if ($request->wantsJson()) {
-            return response()->json([
-                'message' => 'Item ditambahkan ke keranjang.',
-                'cart_id' => $cart->id,
-                'totals'  => [
-                    'subtotal' => $cart->subtotal_amount,
-                    'discount' => $cart->discount_amount,
-                    'shipping' => $cart->shipping_amount,
-                    'tax'      => $cart->tax_amount,
-                    'grand'    => $cart->grand_total,
+            // Get or create cart based on authentication status
+            $cart = Cart::firstOrCreate(
+                [
+                    'customer_id' => $userId,
+                    'session_id' => $userId ? null : $sessionId,
                 ],
-            ]);
-        }
+                [
+                    'currency' => strtoupper($request->input('currency', 'IDR')),
+                ]
+            );
 
-        // Response untuk form biasa (non-AJAX)
-        return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
+            // Update currency if different
+            $currency = strtoupper($request->input('currency', $cart->currency));
+            if ($cart->currency !== $currency) {
+                $cart->update(['currency' => $currency]);
+            }
+
+            // Add item to cart
+            $svc->addItem(
+                $cart,
+                (int) $request->product_id,
+                (int) $request->quantity,
+                (array) $request->input('meta_json', [])
+            );
+
+            // Prepare response data
+            $cart->load(['items.product']);
+            $itemCount = $cart->items()->sum('qty');
+
+            $items = $cart->items()->get()->map(fn ($item) => [
+                'id' => $item->id,
+                'name' => $item->product?->name ?? 'Item',
+                'variant' => $item->product?->sku,
+                'qty' => (int) $item->qty,
+                'unit_price' => (float) $item->unit_price,
+                'image' => $item->product?->primary_image_url,
+            ]);
+
+            $totals = [
+                'subtotal' => (float) $cart->subtotal_amount,
+                'discount' => (float) $cart->discount_amount,
+                'shipping' => (float) $cart->shipping_amount,
+                'tax' => (float) $cart->tax_amount,
+                'grand' => (float) $cart->grand_total,
+            ];
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Produk berhasil ditambahkan ke keranjang!',
+                    'cart_count' => $itemCount,
+                    'cart_items' => $items,
+                    'cart_totals' => $totals,
+                    'data' => [
+                        'cart_id' => $cart->id,
+                        'item_count' => $itemCount,
+                        'totals' => $totals,
+                    ],
+                ]);
+            }
+
+            return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
+
+        } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menambahkan produk ke keranjang.',
+                    'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan sistem.',
+                ], $e->getCode() ?: 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal menambahkan item ke keranjang.');
+        }
     }
 
     /**
@@ -78,12 +119,12 @@ class CartController extends Controller
      */
     public function storeMany(AddManyToCartRequest $request, CartService $svc)
     {
-        $userId    = $request->input('user_id') ?? Auth::id();
+        $userId = $request->input('user_id') ?? Auth::id();
         $sessionId = $request->input('session_id') ?? session()->getId();
 
         $cart = Cart::firstOrCreate(
             [
-                'user_id'    => $userId,
+                'user_id' => $userId,
                 'session_id' => $userId ? null : $sessionId,
             ],
             [
@@ -102,12 +143,12 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Items ditambahkan.',
                 'cart_id' => $cart->id,
-                'totals'  => [
+                'totals' => [
                     'subtotal' => $cart->subtotal_amount,
                     'discount' => $cart->discount_amount,
                     'shipping' => $cart->shipping_amount,
-                    'tax'      => $cart->tax_amount,
-                    'grand'    => $cart->grand_total,
+                    'tax' => $cart->tax_amount,
+                    'grand' => $cart->grand_total,
                 ],
             ]);
         }
@@ -124,23 +165,25 @@ class CartController extends Controller
             'qty' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        $item->qty       = (int) $request->qty;
-        $item->row_total = $item->unit_price * $item->qty;
-        $item->save();
+        $item->update([
+            'qty' => (int) $request->qty,
+            'row_total' => (int) $request->qty * $item->unit_price,
+        ]);
 
-        $svc->recalculate($item->cart);
+        $item->cart->load('items'); // Ensure items are loaded for count
 
-        if ($request->wantsJson()) {
-            return response()->json(['message' => 'Qty diperbarui.', 'totals' => [
-                'subtotal' => $item->cart->subtotal_amount,
-                'discount' => $item->cart->discount_amount,
-                'shipping' => $item->cart->shipping_amount,
-                'tax'      => $item->cart->tax_amount,
-                'grand'    => $item->cart->grand_total,
-            ]]);
-        }
-
-        return back()->with('success', 'Qty diperbarui.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Qty diperbarui.',
+            'totals' => [
+                'subtotal' => (float) $item->cart->subtotal_amount,
+                'discount' => (float) $item->cart->discount_amount,
+                'shipping' => (float) $item->cart->shipping_amount,
+                'tax' => (float) $item->cart->tax_amount,
+                'grand' => (float) $item->cart->grand_total,
+                'item_count' => $item->cart->items->count(),
+            ],
+        ]);
     }
 
     /**
@@ -154,13 +197,20 @@ class CartController extends Controller
         $svc->recalculate($cart);
 
         if ($request->wantsJson()) {
-            return response()->json(['message' => 'Item dihapus.', 'totals' => [
-                'subtotal' => $cart->subtotal_amount,
-                'discount' => $cart->discount_amount,
-                'shipping' => $cart->shipping_amount,
-                'tax'      => $cart->tax_amount,
-                'grand'    => $cart->grand_total,
-            ]]);
+            $cart->load('items'); // Ensure items are loaded for count
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item dihapus.',
+                'totals' => [
+                    'subtotal' => (float) $cart->subtotal_amount,
+                    'discount' => (float) $cart->discount_amount,
+                    'shipping' => (float) $cart->shipping_amount,
+                    'tax' => (float) $cart->tax_amount,
+                    'grand' => (float) $cart->grand_total,
+                    'item_count' => $cart->items->count(),
+                ],
+            ]);
         }
 
         return back()->with('success', 'Item dihapus.');

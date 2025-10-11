@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
-use App\Models\BaseModel;
+use App\Models\Auth\User;
+use Illuminate\Database\Eloquent\Model;
 
-class EventLog extends BaseModel
+class EventLog extends Model
 {
-    
-    protected $table = 'event_logs';
     public $timestamps = false;
+    protected $table = 'event_logs';
+
     protected $fillable = [
-        'user_id','event_type','entity','entity_id','data_json'
+        'user_id',
+        'event_type',
+        'entity',
+        'entity_id',
+        'data_json',
+        'created_at',
     ];
+
     protected $casts = [
-        'id' => 'integer',
-        'user_id' => 'integer',
-        'entity_id' => 'integer',
         'data_json' => 'array',
         'created_at' => 'datetime',
     ];
@@ -24,10 +28,4 @@ class EventLog extends BaseModel
     {
         return $this->belongsTo(User::class);
     }
-
-    public function entity()
-    {
-        return $this->belongsTo(Entity::class);
-    }
-
 }

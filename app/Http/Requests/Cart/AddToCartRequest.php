@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Cart;
 
+use App\Models\Product\Product;
 use App\Models\ProductVariant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,11 +31,11 @@ class AddToCartRequest extends FormRequest
             'applied_promos.*' => ['string', 'max:50'],
 
             // Item
-            'variant_id'       => ['required', 'integer', Rule::exists('product_variants', 'id')->where(function ($q) {
+            'product_id'       => ['required', 'integer', Rule::exists('products', 'id')->where(function ($q) {
                 // Jika ada kolom is_active di variants, aktifkan filter ini
                 $q->where('is_active', 1);
             })],
-            'qty'              => ['required', 'integer', 'min:1', 'max:1000'],
+            'quantity'              => ['required', 'integer', 'min:1', 'max:1000'],
 
             // Dilarang diisi client (server yang hitung)
             'unit_price'      => ['prohibited'],
@@ -68,14 +69,32 @@ class AddToCartRequest extends FormRequest
         }
     }
 
+    /**
+     * Handle a failed validation attempt for AJAX requests.
+     */
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        if ($this->wantsJson() || $this->ajax()) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422)
+            );
+        }
+
+        parent::failedValidation($validator);
+    }
+
     public function withValidator($validator)
     {
         $validator->after(function ($v) {
             // Opsional cek stok jika kolom `stock` tersedia
-            $variant = ProductVariant::query()->select('id', 'stock')->find($this->variant_id);
-            if ($variant && !is_null($variant->stock)) {
-                if ($variant->stock < (int) $this->qty) {
-                    $v->errors()->add('qty', 'Stok tidak mencukupi.');
+            $product = Product::query()->select('id', 'stock')->find($this->product_id);
+            if ($product && !is_null($product->stock)) {
+                if ($product->stock < (int) $this->quantity) {
+                    $v->errors()->add('quantity', "Stok tidak mencukupi. Stok tersedia: {$product->stock}");
                 }
             }
         });

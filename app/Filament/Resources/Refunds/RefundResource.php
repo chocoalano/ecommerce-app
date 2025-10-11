@@ -3,101 +3,83 @@
 namespace App\Filament\Resources\Refunds;
 
 use App\Filament\Resources\Refunds\Pages\ManageRefunds;
-use App\Models\Refund;
+use App\Models\OrderProduct\Refund;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class RefundResource extends Resource
 {
     protected static ?string $model = Refund::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pesanan';
-
-    protected static ?string $recordTitleAttribute = 'Refund';
+    protected static string | UnitEnum | null $navigationGroup = 'Penjualan';
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('order_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('payment_id')
-                    ->numeric(),
-                Select::make('status')
-                    ->options([
-            'INITIATED' => 'I n i t i a t e d',
-            'AUTHORIZED' => 'A u t h o r i z e d',
-            'CAPTURED' => 'C a p t u r e d',
-            'FAILED' => 'F a i l e d',
-            'CANCELED' => 'C a n c e l e d',
-            'REFUNDED' => 'R e f u n d e d',
-            'PARTIAL_REFUND' => 'P a r t i a l  r e f u n d',
-        ])
-                    ->default('REFUNDED')
-                    ->required(),
-                TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('reason'),
-            ]);
-    }
-
-    public static function infolist(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                TextEntry::make('order_id')
-                    ->numeric(),
-                TextEntry::make('payment_id')
-                    ->numeric(),
-                TextEntry::make('status'),
-                TextEntry::make('amount')
-                    ->numeric(),
-                TextEntry::make('reason'),
-                TextEntry::make('created_at')
-                    ->dateTime(),
-            ]);
+        return $schema->components([
+            Select::make('order_id')
+                ->relationship('order', 'id')
+                ->label('Order')
+                ->helperText('Relasi ke order yang direfund')
+                ->required(),
+            Select::make('payment_id')
+                ->relationship('payment', 'id')
+                ->label('Payment')
+                ->helperText('Relasi ke payment utama untuk refund ini')
+                ->required(),
+            Select::make('status')
+                ->options([
+                    'PENDING'   => 'Pending',
+                    'APPROVED'  => 'Approved',
+                    'REJECTED'  => 'Rejected',
+                    'COMPLETED' => 'Completed',
+                ])
+                ->label('Status')
+                ->helperText('Status refund (Pending, Approved, Rejected, Completed)')
+                ->required(),
+            TextInput::make('amount')
+                ->numeric()
+                ->label('Amount')
+                ->helperText('Nominal refund (dalam satuan mata uang)')
+                ->required(),
+            Textarea::make('reason')
+                ->label('Reason')
+                ->helperText('Alasan/refund note dari customer/admin')
+                ->rows(3),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('Refund')
             ->columns([
-                TextColumn::make('order_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('payment_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('status'),
-                TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('reason')
-                    ->searchable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('id')->sortable(),
+                TextColumn::make('order.order_no')->label('Order')->sortable(),
+                TextColumn::make('payment.status')->label('Payment Status')->sortable(),
+                TextColumn::make('status')->sortable(),
+                TextColumn::make('amount')->label('Amount')->sortable(),
+                TextColumn::make('reason')->label('Reason')->limit(30),
             ])
             ->filters([
-                //
+                SelectFilter::make('status')
+                    ->options([
+                        'PENDING'   => 'Pending',
+                        'APPROVED'  => 'Approved',
+                        'REJECTED'  => 'Rejected',
+                        'COMPLETED' => 'Completed',
+                    ]),
             ])
             ->recordActions([
-                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

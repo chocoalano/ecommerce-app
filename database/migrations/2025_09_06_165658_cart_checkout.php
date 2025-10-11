@@ -13,22 +13,43 @@ return new class extends Migration
     {
         /**
          * Tabel: carts
-         * Keranjang belanja, bisa dimiliki user login maupun guest (pakai session_id).
+         * Keranjang belanja untuk user/guest.
          */
         Schema::create('carts', function (Blueprint $table) {
             $table->bigIncrements('id')->comment('Primary key keranjang');
-            $table->foreignId('user_id')
-                ->nullable()->constrained('users')
-                ->nullOnDelete()->cascadeOnUpdate()
+
+            // Pemilik keranjang: user atau guest (session)
+            $table->foreignId('customer_id')
+                ->nullable()
+                ->constrained('customers')
+                ->nullOnDelete()
+                ->cascadeOnUpdate()
                 ->comment('FK opsional ke user pemilik keranjang; null jika guest');
-            $table->string('session_id', 100)->nullable()->comment('ID sesi untuk keranjang guest (tanpa login)');
-            $table->string('currency', 3)->nullable()->comment('Kode mata uang (mis. IDR)');
+            $table->string('session_id', 100)->nullable()->index()->comment('ID sesi untuk keranjang guest (tanpa login)');
+
+            // Ringkasan nilai (cache)
+            $table->char('currency', 3)->default('IDR')->comment('Kode mata uang (mis. IDR)');
             $table->decimal('subtotal_amount', 18, 2)->default(0)->comment('Total harga item sebelum diskon/ongkir/pajak');
             $table->decimal('discount_amount', 18, 2)->default(0)->comment('Total diskon yang diterapkan');
             $table->decimal('shipping_amount', 18, 2)->default(0)->comment('Biaya pengiriman');
             $table->decimal('tax_amount', 18, 2)->default(0)->comment('Total pajak');
             $table->decimal('grand_total', 18, 2)->default(0)->comment('Total akhir yang harus dibayar');
-            $table->json('applied_promos')->nullable()->comment('Daftar promo/voucher yang diterapkan (format JSON)');
+
+            // Promo yang diaplikasikan pada level cart
+            // Kolom promo yang lebih efektif: relasi ke tabel promos dan voucher
+            $table->foreignId('promo_id')
+                ->nullable()
+                ->constrained('promos')
+                ->nullOnDelete()
+                ->cascadeOnUpdate()
+                ->comment('FK opsional ke promo yang diterapkan pada cart');
+            $table->foreignId('voucher_id')
+                ->nullable()
+                ->constrained('vouchers')
+                ->nullOnDelete()
+                ->cascadeOnUpdate()
+                ->comment('FK opsional ke voucher yang diterapkan pada cart');
+
             $table->timestamps();
 
             $table->comment('Master keranjang belanja untuk user/guest');
@@ -36,26 +57,51 @@ return new class extends Migration
 
         /**
          * Tabel: cart_items
-         * Item dalam keranjang, detail per variant produk.
+         * Item dalam keranjang, detail per produk (tanpa variant).
          */
         Schema::create('cart_items', function (Blueprint $table) {
             $table->bigIncrements('id')->comment('Primary key item keranjang');
+
             $table->foreignId('cart_id')
                 ->constrained('carts')
-                ->cascadeOnUpdate()->cascadeOnDelete()
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete()
                 ->comment('FK ke carts.id (keranjang induk)');
-            $table->foreignId('variant_id')
-                ->constrained('product_variants')
-                ->cascadeOnUpdate()->cascadeOnDelete()
-                ->comment('FK ke product_variants.id (produk yang dipilih)');
-            $table->integer('qty')->default(1)->comment('Jumlah unit produk dalam keranjang');
-            $table->decimal('unit_price', 18, 2)->comment('Harga per unit variant saat ditambahkan');
-            $table->decimal('row_total', 18, 2)->comment('Subtotal untuk item ini (qty x unit_price - diskon item)');
-            $table->json('meta_json')->nullable()->comment('Informasi tambahan (mis. breakdown promo/bundle/gift)');
-            $table->timestamp('created_at')->useCurrent()->comment('Waktu item ditambahkan ke keranjang');
 
-            $table->unique(['cart_id','variant_id'], 'cart_items_cart_variant_unique');
-            $table->comment('Detail item produk dalam keranjang belanja');
+            $table->foreignId('product_id')
+                ->constrained('products')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete()
+                ->comment('FK ke products.id (produk yang dipilih)');
+
+            // Kuantitas & harga snapshot saat add-to-cart
+            $table->unsignedInteger('qty')->default(1)->comment('Jumlah unit produk dalam keranjang');
+
+            // Snapshot harga & info produk agar stabil saat checkout
+            $table->decimal('unit_price', 18, 2)->comment('Harga per unit produk saat ditambahkan (sebelum diskon item)');
+            $table->char('currency', 3)->default('IDR')->comment('Mata uang pada saat penambahan');
+            $table->string('product_sku', 100)->nullable()->comment('SKU snapshot');
+            $table->string('product_name', 255)->nullable()->comment('Nama produk snapshot');
+
+            // Nilai total baris setelah diskon item (bukan grand total cart)
+            $table->decimal('row_total', 18, 2)->comment('Subtotal untuk item ini (qty x unit_price - diskon item)');
+
+            // Meta: breakdown promo/bundle/gift, catatan, dll
+            // Kolom meta yang lebih efektif tanpa tipe JSON.
+            // Simpan breakdown promo/bundle/gift sebagai string terstruktur (misal: kode promo, nama bundle, dst).
+            $table->string('promo_code', 100)->nullable()->comment('Kode promo yang diterapkan pada item');
+            $table->string('bundle_name', 100)->nullable()->comment('Nama bundle/gift yang terkait dengan item');
+            $table->string('note', 255)->nullable()->comment('Catatan khusus untuk item ini');
+            // Tambahkan kolom lain sesuai kebutuhan bisnis.
+
+            $table->timestamps();
+
+            // Gabungkan item yang sama (opsional: lihat catatan di bawah)
+            $table->unique(['cart_id', 'product_id'], 'cart_items_cart_product_unique');
+
+            // Indeks umum
+            $table->index(['cart_id']);
+            $table->comment('Detail item produk dalam keranjang belanja (tanpa variant)');
         });
     }
 

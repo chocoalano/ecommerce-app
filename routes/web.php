@@ -1,20 +1,21 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
 // Rute Umum dan Produk
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/category', [HomeController::class, 'show'])->name('category');
 
-Route::group(['prefix' => 'product', 'as' => 'product.'], function () {
-    Route::get('/{sku}', [ProductController::class, 'show'])->name('show');
+// Page Routes (accessible to everyone)
+Route::group(['prefix' => 'pages', 'as' => 'page.'], function () {
+    Route::get('/', [PageController::class, 'index'])->name('index'); // Sitemap
+    Route::get('/category/{category}', [PageController::class, 'category'])->name('category'); // Pages by category
 });
+
+// Individual page route (should be after other routes to avoid conflicts)
+Route::get('/page/{page:slug}', [PageController::class, 'show'])->name('page.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +28,7 @@ Route::withoutMiddleware(['customer'])->group(function () {
     Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
         // Halaman Pendaftaran (Register) - Dapat diakses oleh tamu
         Route::get('/register', [AuthController::class, 'showRegister'])->name('register'); // Sesuaikan ke showRegister
-        
+
         // Halaman Login - Dapat diakses oleh tamu
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login'); // Sesuaikan ke showLogin
         Route::post('/login', [AuthController::class, 'login_submit'])->name('login.submit');
@@ -48,44 +49,25 @@ Route::middleware(['customer'])->group(function () {
     Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
         // Halaman Profil (Dashboard Customer)
         Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
-        Route::get('/cart', [AuthController::class, 'cart'])->name('cart');
-        Route::get('/order', [AuthController::class, 'orders'])->name('order');
+
+        // Order History Routes
+        Route::get('/orders', [AuthController::class, 'orders'])->name('orders');
+        Route::get('/orders/{order}', [AuthController::class, 'orderDetail'])->name('order.detail');
+        Route::post('/orders/{order}/cancel', [AuthController::class, 'cancelOrder'])->name('order.cancel');
+
         Route::get('/setting', [AuthController::class, 'setting'])->name('setting');
 
         // Logout - Menggunakan POST, sangat disarankan untuk keamanan
-        Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); 
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 
-    // 2. Rute Produk Sensitif (Interaksi)
-    Route::resource('cart', CartController::class)->only(['index', 'store', 'update', 'destroy']);
-    
-    Route::group(['prefix' => 'product', 'as' => 'product.'], function () {
-        // Menambah ke Keranjang - Membutuhkan autentikasi
-        Route::get('/{id}/store', [ProductController::class, 'store'])->name('add_cart'); // Lebih baik menggunakan POST
-        
-        // Menambah ke Wishlist - Membutuhkan autentikasi
-        Route::get('/{id}/wislist', [ProductController::class, 'wislist'])->name('wislist');
-
-        // Update Keranjang (PUT)
-        Route::put('/{id}', [ProductController::class, 'update'])->name('update_cart');
-
-        // Hapus dari Keranjang (DELETE)
-        Route::delete('/{id}', [ProductController::class, 'destroy'])->name('delete_cart');
-    });
-
-    // ini route buat cart
-    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    // aksi add (single item) — cocok untuk tombol "Add to Cart"
-    Route::post('/cart/items', [CartController::class, 'store'])->name('cart.items.store');
-    // aksi add (batch, opsional)
-    Route::post('/cart/items/batch', [CartController::class, 'storeMany'])->name('cart.items.storeMany');
-    // (opsional) ubah qty / hapus item
-    Route::patch('/cart/items/{item}', [CartController::class, 'update'])->name('cart.items.update');
-    Route::delete('/cart/items/{item}', [CartController::class, 'destroy'])->name('cart.items.destroy');
-
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/place', [CheckoutController::class, 'place'])->name('checkout.place');
-    Route::get('/checkout/thank-you/{order}', [CheckoutController::class, 'thankyou'])->name('checkout.thankyou');
-
-    Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction.index');
 });
+
+// Include cart & e-commerce routes
+require __DIR__.'/cart.php';
+
+// Include product routes
+require __DIR__.'/products.php';
+
+// Include Midtrans webhook routes
+require __DIR__.'/midtrans.php';

@@ -3,76 +3,113 @@
 namespace App\Filament\Resources\PaymentMethods;
 
 use App\Filament\Resources\PaymentMethods\Pages\ManagePaymentMethods;
-use App\Models\PaymentMethod;
+use App\Models\OrderProduct\PaymentMethod;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class PaymentMethodResource extends Resource
 {
     protected static ?string $model = PaymentMethod::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Pesanan';
-
-    protected static ?string $recordTitleAttribute = 'PaymentMethod';
+    protected static string | UnitEnum | null $navigationGroup = 'Penjualan';
+    protected static ?string $navigationLabel = 'Metode Pembayaran';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('code')
-                    ->required(),
-                TextInput::make('name'),
-                Toggle::make('is_active')
-                    ->required(),
-            ]);
-    }
+                Section::make('Metode Pembayaran')
+                    ->description('Kelola master metode pembayaran yang didukung checkout.')
+                    ->schema([
+                        TextInput::make('code')
+                            ->label('Kode')
+                            ->helperText('Kode unik, misal: VA, QRIS, CC, E-WALLET, COD.')
+                            ->required()
+                            ->maxLength(50)
+                            ->unique(ignoreRecord: true),
 
-    public static function infolist(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                TextEntry::make('code'),
-                TextEntry::make('name'),
-                IconEntry::make('is_active')
-                    ->boolean(),
+                        TextInput::make('name')
+                            ->label('Nama Tampilan')
+                            ->helperText('Nama yang ditampilkan kepada pelanggan (opsional).')
+                            ->maxLength(100),
+
+                        Toggle::make('is_active')
+                            ->label('Aktif')
+                            ->helperText('Nonaktifkan jika sementara tidak tersedia.')
+                            ->default(true),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull()
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('PaymentMethod')
             ->columns([
                 TextColumn::make('code')
-                    ->searchable(),
+                    ->label('Kode')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Nama')
+                    ->searchable()
+                    ->toggleable(),
+
                 IconColumn::make('is_active')
-                    ->boolean(),
+                    ->label('Aktif')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
-                //
+                TernaryFilter::make('is_active')
+                    ->label('Status Aktif')
+                    ->placeholder('Semua')
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Nonaktif')
+                    ->queries(
+                        true: fn ($q) => $q->where('is_active', true),
+                        false: fn ($q) => $q->where('is_active', false),
+                        blank: fn ($q) => $q
+                    ),
             ])
-            ->recordActions([
-                ViewAction::make(),
+            ->actions([
+                Action::make('toggle')
+                    ->label('Toggle')
+                    ->icon('heroicon-o-power')
+                    ->tooltip('Aktif/Nonaktifkan')
+                    ->action(fn (PaymentMethod $record) => $record->update(['is_active' => ! $record->is_active])),
+
                 EditAction::make(),
                 DeleteAction::make(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
+                    BulkAction::make('activate')
+                        ->label('Aktifkan')
+                        ->icon('heroicon-o-check-circle')
+                        ->action(fn ($records) => $records->each->update(['is_active' => true])),
+
+                    BulkAction::make('deactivate')
+                        ->label('Nonaktifkan')
+                        ->icon('heroicon-o-x-circle')
+                        ->action(fn ($records) => $records->each->update(['is_active' => false])),
+
                     DeleteBulkAction::make(),
                 ]),
             ]);

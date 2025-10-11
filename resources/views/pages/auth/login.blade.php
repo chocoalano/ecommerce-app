@@ -56,19 +56,72 @@
 
                 <!-- Formulir Login -->
                 <div class="mt-6">
+                    {{-- Alert Messages --}}
+                    @if (session('success'))
+                        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                                <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                            </div>
+                        </div>
+                    @endif
+
                     <form action="{{ route('auth.login.submit') }}" method="POST" class="space-y-5">
                         @csrf
 
                         <!-- Input Email -->
                         <div>
                             <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Alamat Email</label>
-                            <input type="email" id="email" name="email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5" placeholder="email@anda.com" required>
+                            <input type="email"
+                                   id="email"
+                                   name="email"
+                                   value="{{ old('email') }}"
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5"
+                                   placeholder="email@anda.com"
+                                   required>
+                            @error('email')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Input Kata Sandi -->
                         <div>
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Kata Sandi</label>
-                            <input type="password" id="password" name="password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5" placeholder="••••••••" required>
+                            <div class="relative">
+                                <input type="password"
+                                       id="password"
+                                       name="password"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5 pr-10"
+                                       placeholder="••••••••"
+                                       required>
+                                <button type="button"
+                                        onclick="togglePassword()"
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <svg id="eye-open" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <svg id="eye-closed" class="w-5 h-5 text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            @error('password')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Opsi Lain -->
@@ -90,56 +143,81 @@
                         <!-- Tombol Submit (Flowbite Primary Button) -->
                         <div>
                             <button type="submit"
-                                class="w-full inline-flex items-center justify-center py-3 text-base font-semibold text-center text-white
-                                      bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300">
-                                Masuk ke EcomStore
+                                    id="login-button"
+                                    class="w-full inline-flex items-center justify-center py-3 text-base font-semibold text-center text-white
+                                          bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span id="login-text">Masuk ke EcomStore</span>
+                                <svg id="login-spinner" class="hidden animate-spin ml-2 -mr-1 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
                             </button>
                         </div>
                     </form>
 
-                    <!-- Divider atau Opsi Sosial Login -->
-                    <div class="mt-8">
-                        <div class="relative">
-                            <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-zinc-200"></div>
-                            </div>
-                            <div class="relative flex justify-center text-sm">
-                                <span class="px-2 bg-white text-zinc-500">
-                                    Atau lanjutkan dengan
-                                </span>
-                            </div>
-                        </div>
+                    <!-- JavaScript untuk fungsionalitas form -->
+                    <script>
+                        function togglePassword() {
+                            const passwordInput = document.getElementById('password');
+                            const eyeOpen = document.getElementById('eye-open');
+                            const eyeClosed = document.getElementById('eye-closed');
 
-                        <div class="mt-4 grid grid-cols-3 gap-3">
-                            {{-- Tombol Sosial (Flowbite Outline Button) --}}
-                            <button type="button"
-                                class="col-span-1 w-full inline-flex items-center justify-center py-3 text-base font-medium text-gray-700
-                                       border border-gray-300 rounded-full hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition duration-300">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path
-                                        d="M12 0C5.373 0 0 5.373 0 12c0 5.373 3.438 9.94 8.212 11.53c.6.11.82-.26.82-.57v-1.99c-3.344.726-4.04-1.608-4.04-1.608c-.546-1.385-1.332-1.756-1.332-1.756c-1.087-.745.084-.73.084-.73c1.205.084 1.838 1.234 1.838 1.234c1.07 1.838 2.809 1.305 3.49.998c.108-.777.42-1.305.762-1.608c-2.665-.3-5.466-1.332-5.466-5.937c0-1.305.465-2.378 1.234-3.227c-.108-.3-.546-1.55.108-3.227c0 0 1-.32 3.227 1.234c.957-.266 1.983-.4 3.003-.4s2.046.134 3.003.4c2.227-1.554 3.227-1.234 3.227-1.234c.654 1.677.216 2.927.108 3.227c.77.849 1.234 1.922 1.234 3.227c0 4.614-2.801 5.637-5.474 5.937c.435.378.82 1.137.82 2.296v3.39c0 .31.22.68.82.57C20.562 21.94 24 17.373 24 12c0-6.627-5.373-12-12-12z" />
-                                </svg>
-                            </button>
+                            if (passwordInput.type === 'password') {
+                                passwordInput.type = 'text';
+                                eyeOpen.classList.add('hidden');
+                                eyeClosed.classList.remove('hidden');
+                            } else {
+                                passwordInput.type = 'password';
+                                eyeOpen.classList.remove('hidden');
+                                eyeClosed.classList.add('hidden');
+                            }
+                        }
 
-                            <button type="button"
-                                class="col-span-1 w-full inline-flex items-center justify-center py-3 text-base font-medium text-gray-700
-                                       border border-gray-300 rounded-full hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition duration-300">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path
-                                        d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15h-2.25v-3h2.25V9c0-2.2 1.35-3.47 3.36-3.47 1.05 0 1.95.08 2.22.12v2.54h-1.49c-1.12 0-1.34.53-1.34 1.31V12h2.82l-.45 3h-2.37v6.8c4.56-.93 8-4.96 8-9.8z" />
-                                </svg>
-                            </button>
-                            
-                            <button type="button"
-                                class="col-span-1 w-full inline-flex items-center justify-center py-3 text-base font-medium text-gray-700
-                                       border border-gray-300 rounded-full hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition duration-300">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path
-                                        d="M21.5,11.2h-9.9v2.4h5.5c-0.3,1.6-1.6,2.7-3.6,2.7c-2.1,0-3.9-1.8-3.9-4s1.8-4,3.9-4c1.1,0,2,0.4,2.7,1.1l1.9-1.8c-1.2-1.1-2.9-1.8-4.6-1.8c-4.2,0-7.6,3.4-7.6,7.6c0,4.2,3.4,7.6,7.6,7.6c4.1,0,7.2-2.9,7.2-7.4C22,11.7,21.8,11.4,21.5,11.2L21.5,11.2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                        // Loading state untuk form submit
+                        document.querySelector('form').addEventListener('submit', function(e) {
+                            const button = document.getElementById('login-button');
+                            const text = document.getElementById('login-text');
+                            const spinner = document.getElementById('login-spinner');
+
+                            // Disable button dan show loading
+                            button.disabled = true;
+                            text.textContent = 'Memproses...';
+                            spinner.classList.remove('hidden');
+                        });
+
+                        // Auto focus pada email jika ada error
+                        @if($errors->has('email'))
+                            document.getElementById('email').focus();
+                        @elseif($errors->has('password'))
+                            document.getElementById('password').focus();
+                        @endif
+
+                        // Real-time validation feedback
+                        document.getElementById('email').addEventListener('blur', function() {
+                            const email = this.value;
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                            if (email && !emailRegex.test(email)) {
+                                this.classList.add('border-red-500');
+                                this.classList.remove('border-gray-300');
+                            } else {
+                                this.classList.remove('border-red-500');
+                                this.classList.add('border-gray-300');
+                            }
+                        });
+
+                        document.getElementById('password').addEventListener('input', function() {
+                            const password = this.value;
+
+                            if (password.length > 0 && password.length < 6) {
+                                this.classList.add('border-red-500');
+                                this.classList.remove('border-gray-300');
+                            } else {
+                                this.classList.remove('border-red-500');
+                                this.classList.add('border-gray-300');
+                            }
+                        });
+                    </script>
                 </div>
             </div>
         </div>

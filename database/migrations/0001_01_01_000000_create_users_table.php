@@ -32,7 +32,7 @@ return new class extends Migration
          * Menyimpan profil dasar & kredensial pengguna.
          */
         Schema::create('users', function (Blueprint $table) {
-            $table->id()->comment('Primary key pengguna (auto increment)');
+            $table->id()->comment('Primary key pengguna backoffice (auto increment)');
             $table->string('name')
                   ->comment('Nama tampilan pengguna (umumnya nama depan/lengkap singkat)');
             $table->string('email')->unique()
@@ -82,6 +82,8 @@ return new class extends Migration
                   ->comment('FK ke roles.id');
             $table->timestamp('created_at')->useCurrent()
                   ->comment('Waktu penetapan role');
+            $table->timestamp('updated_at')->useCurrent() 
+                  ->comment('Waktu pembaruan role');
 
             $table->unique(['user_id','role_id'], 'user_roles_user_id_role_id_unique');
 
@@ -95,17 +97,44 @@ return new class extends Migration
         });
 
         /**
+         * Tabel: users
+         * Menyimpan profil dasar & kredensial pengguna.
+         */
+        Schema::create('customers', function (Blueprint $table) {
+            $table->id()->comment('Primary key pengguna customer (auto increment)');
+            $table->string('name')
+                  ->comment('Nama tampilan pengguna (umumnya nama depan/lengkap singkat)');
+            $table->string('email')->unique()
+                  ->comment('Email unik untuk login & korespodensi');
+            $table->timestamp('email_verified_at')->nullable()
+                  ->comment('Waktu verifikasi email, null jika belum terverifikasi');
+            $table->string('password')
+                  ->comment('Hash password (bcrypt/argon)');
+            $table->rememberToken()
+                  ->comment('Token remember me untuk sesi persisten');
+            $table->string('phone', 30)->unique()->nullable()
+                  ->comment('Nomor telepon unik (opsional) untuk verifikasi/OTP');
+            $table->string('full_name', 255)->nullable()
+                  ->comment('Nama lengkap legal (opsional), berbeda dari display name');
+            $table->boolean('is_active')->default(true)
+                  ->comment('Status aktif/non-aktif akun (soft disable)');
+            $table->timestamps();
+
+            $table->comment('Master data pengguna/aplikasi');
+        });
+
+        /**
          * Tabel: addresses
          * Alamat milik pengguna (pengiriman/penagihan).
          */
-        Schema::create('addresses', function (Blueprint $table) {
+        Schema::create('customer_addresses', function (Blueprint $table) {
             $table->bigIncrements('id')
                   ->comment('Primary key alamat (auto increment)');
-            $table->foreignId('user_id')->nullable()
-                  ->constrained('users')
+            $table->foreignId('customer_id')->nullable()
+                  ->constrained('customers')
                   ->nullOnDelete()
                   ->cascadeOnUpdate()
-                  ->comment('FK ke pemilik alamat (users.id); null jika guest)');
+                  ->comment('FK ke pemilik alamat (customer.id); null jika guest)');
             $table->string('label', 100)->nullable()
                   ->comment('Label alias alamat (Rumah/Kantor/Utama)');
             $table->string('recipient_name', 255)->nullable()
@@ -185,7 +214,8 @@ return new class extends Migration
         Schema::dropIfExists('password_reset_tokens');
 
         // Tabel yang bergantung ke users
-        Schema::dropIfExists('addresses');
+        Schema::dropIfExists('customer_addresses');
+        Schema::dropIfExists('customers');
         Schema::dropIfExists('user_roles');
 
         // Master reference

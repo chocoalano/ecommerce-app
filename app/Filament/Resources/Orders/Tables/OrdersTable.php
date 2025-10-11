@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Models\OrderProduct\Order;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -19,45 +20,42 @@ class OrdersTable
     {
         return $table
             ->columns([
-                TextColumn::make('order_no')->label('Order No')->searchable()->sortable(),
-                TextColumn::make('user.name')->label('User')->toggleable()->searchable(),
-                BadgeColumn::make('status')->label('Status')
-                    ->colors([
-                        'warning' => ['PENDING','PROCESSING','READY_TO_SHIP'],
-                        'info'    => ['PAID','SHIPPED'],
-                        'success' => ['COMPLETED'],
-                        'danger'  => ['FAILED','CANCELED'],
-                        'secondary' => ['REFUNDED','PARTIAL_REFUND'],
-                    ])
-                    ->sortable(),
-                TextColumn::make('grand_total')->money('idr', true)->label('Grand Total')->sortable(),
-                TextColumn::make('placed_at')->dateTime('Y-m-d H:i')->label('Placed')->sortable(),
-                TextColumn::make('updated_at')->dateTime('Y-m-d H:i')->label('Updated')->toggleable()->sortable(),
+                TextColumn::make('order_no')->label('Order #')->searchable()->sortable(),
+                TextColumn::make('customer.name')->label('Customer')->placeholder('Guest')->searchable(),
+                BadgeColumn::make('status')->label('Status')->colors([
+                    'warning' => ['PENDING','PROCESSING'],
+                    'success' => ['PAID','COMPLETED'],
+                    'info'    => ['SHIPPED'],
+                    'danger'  => ['CANCELED','REFUNDED','PARTIAL_REFUND'],
+                ])->sortable(),
+                TextColumn::make('grand_total')->label('Total')->money('idr', true)->sortable(),
+                TextColumn::make('placed_at')->label('Placed')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('created_at')->label('Dibuat')->since()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('status')
-                    ->options([
-                        'PENDING'=>'PENDING','PAID'=>'PAID','PROCESSING'=>'PROCESSING','SHIPPED'=>'SHIPPED',
-                        'COMPLETED'=>'COMPLETED','CANCELED'=>'CANCELED','REFUNDED'=>'REFUNDED','PARTIAL_REFUND'=>'PARTIAL_REFUND',
-                    ]),
-                // Filter::make('periode')
-                //     ->form([
-                //         DateTimePicker::make('from')->label('Dari'),
-                //         DateTimePicker::make('until')->label('Sampai'),
-                //     ])
-                //     ->query(fn ($q, $data) => $q
-                //         ->when($data['from'] ?? null, fn ($qq, $v) => $qq->where('placed_at','>=',$v))
-                //         ->when($data['until'] ?? null, fn ($qq, $v) => $qq->where('placed_at','<=',$v))
-                //     ),
-            ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                SelectFilter::make('status')->options([
+                    'PENDING'=>'PENDING','PAID'=>'PAID','PROCESSING'=>'PROCESSING',
+                    'SHIPPED'=>'SHIPPED','COMPLETED'=>'COMPLETED','CANCELED'=>'CANCELED',
+                    'REFUNDED'=>'REFUNDED','PARTIAL_REFUND'=>'PARTIAL_REFUND',
                 ]),
-            ]);
+            ])
+            ->actions([
+                EditAction::make(),
+                Action::make('markPaid')
+                    ->label('Mark as Paid')->icon('heroicon-o-banknotes')
+                    ->requiresConfirmation()
+                    ->visible(fn(Order $record)=>$record->status==='PENDING')
+                    ->action(fn(Order $record)=>$record->update(['status'=>'PAID'])),
+                Action::make('cancelOrder')
+                    ->label('Cancel Order')->color('danger')->icon('heroicon-o-x-circle')
+                    ->requiresConfirmation()
+                    ->visible(fn(Order $record)=>in_array($record->status,['PENDING','PAID','PROCESSING']))
+                    ->action(fn(Order $record)=>$record->update(['status'=>'CANCELED'])),
+            ])
+            ->bulkActions([
+                BulkAction::make('export')->label('Export CSV')->action(fn()=>null)
+                    ->visible(false), // siapkan jika mau
+            ])
+            ->defaultSort('placed_at','desc');;
     }
 }

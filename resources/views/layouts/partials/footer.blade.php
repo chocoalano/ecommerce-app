@@ -1,8 +1,8 @@
 <footer class="bg-white border-t border-gray-200">
-  <div class="mx-auto max-w-5/6 px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+  <div class="mx-auto max-w-5/6 2xl:px-0 px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
     {{-- Newsletter Subscription Section (Flowbite Style, Light Background) --}}
-    <div class="rounded-xl bg-gray-50 p-6 sm:p-8">
+    <div class="rounded-xl bg-gray-50 p-6 sm:p-8 border border-gray-200">
       <div class="grid items-center gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
@@ -19,10 +19,10 @@
               name="email"
               type="email"
               placeholder="nama@email.com"
-              class="block w-full p-2.5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-zinc-900 focus:border-zinc-900"
+              class="block w-full p-2.5 text-sm text-gray-900 border border-gray-300 rounded-full bg-white focus:ring-zinc-900 focus:border-zinc-900"
               required
             />
-            <button type="submit" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-700 focus:ring-4 focus:outline-none focus:ring-zinc-300 transition whitespace-nowrap">
+            <button type="submit" class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:outline-none focus:ring-zinc-300 transition whitespace-nowrap">
               Berlangganan
             </button>
           </div>
@@ -38,47 +38,88 @@
 
       <div class="col-span-2 lg:col-span-2">
         <a href="/" class="flex items-center gap-2">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white font-bold text-lg">SA</span>
-          <span class="text-xl font-extrabold text-gray-900">Sinergi Abadi</span>
+          <img src="{{ asset('images/logo-puranura-id.png') }}" alt="Logo Sinergi Abadi" class="h-9 w-9 rounded-xl object-cover" />
+          <span class="text-xl font-extrabold text-gray-900">{{ config('app.name') }}</span>
         </a>
         <p class="mt-4 max-w-md text-sm text-gray-600">
           Bahan baku minuman berkualitas untuk HORECA dan UMKM. Cepat, segar, dan terpercaya.
         </p>
 
         <div class="mt-6 space-y-2 text-sm text-gray-600">
-          <p><span class="font-semibold text-gray-800">WhatsApp:</span> <a href="https://wa.me/62xxxxxxxxxx" class="hover:text-zinc-900">+62 8xx-xxxx-xxxx</a></p>
-          <p><span class="font-semibold text-gray-800">Email:</span> <a href="mailto:support@domain.com" class="hover:text-zinc-900">support@domain.com</a></p>
-          <p><span class="font-semibold text-gray-800">Jam Operasional:</span> Senin–Sabtu 09:00–18:00 WIB</p>
+          <p><span class="font-semibold text-gray-800">WhatsApp:</span> <a href="https://wa.me/{{ env('COMPANY_WHATSAPP', '62xxxxxxxxxx') }}" class="hover:text-zinc-900">{{ env('COMPANY_PHONE', '+62 8xx-xxxx-xxxx') }}</a></p>
+          <p><span class="font-semibold text-gray-800">Email:</span> <a href="mailto:{{ env('COMPANY_EMAIL', 'support@domain.com') }}" class="hover:text-zinc-900">{{ env('COMPANY_EMAIL', 'support@domain.com') }}</a></p>
+          <p><span class="font-semibold text-gray-800">Jam Operasional:</span> {{ env('COMPANY_OPERATING_HOURS', 'Senin–Sabtu 09:00–18:00 WIB') }}</p>
         </div>
       </div>
 
       <nav aria-label="Shop" class="space-y-4 sm:col-span-1 lg:col-span-1">
         <h4 class="text-sm font-extrabold uppercase tracking-wider text-gray-900">Belanja</h4>
         <ul class="space-y-3 text-sm">
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Matcha & Tea</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Powder Series</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Syrup & Sauce</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Packaging</a></li>
+        @php
+        $categories = Cache::remember('footer_categories', 3600, function () {
+            return \App\Models\Product\Category::select('id', 'name', 'slug')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        });
+        @endphp
+
+        @foreach($categories as $category)
+        <li>
+            <a href="{{ route('products.index', ['category[0]' => $category->slug]) }}"
+               class="text-gray-600 hover:text-zinc-900 transition">
+                {{ $category->name }}
+            </a>
+        </li>
+        @endforeach
         </ul>
       </nav>
 
       <nav aria-label="Perusahaan" class="space-y-4 sm:col-span-1 lg:col-span-1">
         <h4 class="text-sm font-extrabold uppercase tracking-wider text-gray-900">Perusahaan</h4>
         <ul class="space-y-3 text-sm">
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Tentang Kami</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Karier</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Blog</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Press</a></li>
+        @php
+        $companyPages = Cache::remember('footer_company_pages', 3600, function () {
+            return \App\Models\Page::active()
+                ->footer()
+                ->category('company')
+                ->ordered()
+                ->get();
+        });
+        @endphp
+
+        @foreach($companyPages as $page)
+        <li>
+            <a href="{{ route('page.show', $page->slug) }}"
+               class="text-gray-600 hover:text-zinc-900 transition">
+                {{ $page->title }}
+            </a>
+        </li>
+        @endforeach
         </ul>
       </nav>
 
       <nav aria-label="Bantuan" class="space-y-4 sm:col-span-1 lg:col-span-1">
         <h4 class="text-sm font-extrabold uppercase tracking-wider text-gray-900">Bantuan</h4>
         <ul class="space-y-3 text-sm">
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Cara Belanja</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Pengiriman</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Retur & Refund</a></li>
-          <li><a href="#" class="text-gray-600 hover:text-zinc-900 transition">Hubungi Kami</a></li>
+        @php
+        $helpPages = Cache::remember('footer_help_pages', 3600, function () {
+            return \App\Models\Page::active()
+                ->footer()
+                ->category('help')
+                ->ordered()
+                ->get();
+        });
+        @endphp
+
+        @foreach($helpPages as $page)
+        <li>
+            <a href="{{ route('page.show', $page->slug) }}"
+               class="text-gray-600 hover:text-zinc-900 transition">
+                {{ $page->title }}
+            </a>
+        </li>
+        @endforeach
         </ul>
       </nav>
 

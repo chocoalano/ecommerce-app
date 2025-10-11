@@ -1,5 +1,5 @@
 <div class="bg-white py-10">
-    <div class="max-w-5/6 mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5/6 mx-auto">
 
         {{-- Judul row kategori --}}
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-10">
@@ -14,7 +14,7 @@
             </div>
             <div class="mt-4 sm:mt-0">
                 {{-- Flux Button 'Lihat Semua' diganti dengan tag <a> --}}
-                <a href="{{ route('category') }}"
+                <a href="{{ route('products.index') }}"
                     class="inline-flex items-center justify-center
                            border border-gray-300 bg-white text-gray-800 hover:bg-gray-50
                            text-base font-semibold transition duration-300
@@ -53,7 +53,7 @@
                     <div
                         class="mt-2 w-full opacity-0 translate-y-5 transition duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                         {{-- Flux Button 'Lihat Produk' diganti dengan tag <a> --}}
-                        <a href="{{ route('category', ['category'=>$cat['slug']]) }}"
+                        <a href="{{ route('products.index', ['category'=>$cat['slug']]) }}"
                             class="inline-flex items-center justify-center
                                    w-48 h-13 bg-zinc-900 text-white hover:bg-zinc-800
                                    font-semibold transition duration-300

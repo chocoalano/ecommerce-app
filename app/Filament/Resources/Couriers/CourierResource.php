@@ -2,83 +2,110 @@
 
 namespace App\Filament\Resources\Couriers;
 
-
 use App\Filament\Resources\Couriers\Pages\ManageCouriers;
-use App\Models\Courier;
-use BackedEnum;
+use App\Models\OrderProduct\Courier;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
+use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class CourierResource extends Resource
 {
     protected static ?string $model = Courier::class;
 
-    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-
-    protected static ?string $recordTitleAttribute = 'Courier';
-    protected static ?string $navigationLabel = 'Kurir Expedisi';
-
-
-    protected static string|UnitEnum|null $navigationGroup = 'Pengiriman';
+    protected static string | UnitEnum | null $navigationGroup = 'Penjualan';
 
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
-                TextInput::make('code')
-                    ->required(),
-                TextInput::make('name'),
-                Toggle::make('is_active')
-                    ->required(),
-            ]);
-    }
+                Section::make('Informasi Dasar Kurir')
+                    ->description('Detail unik dan status operasional kurir pengiriman.')
+                    ->schema([
+                        
+                        // Field: code
+                        TextInput::make('code')
+                            ->label('Kode Kurir')
+                            ->required()
+                            ->maxLength(10)
+                            ->unique(ignoreRecord: true) // Pastikan kode unik, kecuali saat mengedit data itu sendiri
+                            ->columnSpan(1)
+                            ->helperText('Gunakan kode yang singkat, unik, dan dikenal secara internal (contoh: JNE, POS, TIKI). Maksimal 10 karakter.'),
 
-    public static function infolist(Schema $schema): Schema
-    {
-        return $schema
-            ->components([
-                TextEntry::make('code'),
-                TextEntry::make('name'),
-                IconEntry::make('is_active')
-                    ->boolean(),
+                        // Field: name
+                        TextInput::make('name')
+                            ->label('Nama Kurir')
+                            ->required()
+                            ->maxLength(50)
+                            ->columnSpan(2)
+                            ->helperText('Nama lengkap dari jasa kurir pengiriman (contoh: JNE Express, Pos Indonesia). Maksimal 50 karakter.'),
+
+                        // Field: is_active
+                        Toggle::make('is_active')
+                            ->label('Status Aktif')
+                            ->inline(false) // Toggle diletakkan di bawah label
+                            ->default(true)
+                            ->helperText('Aktifkan untuk menampilkan kurir ini sebagai opsi pengiriman yang tersedia untuk pengguna. Nonaktifkan jika layanan kurir ini sedang tidak beroperasi.'),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('Courier')
             ->columns([
+                // Kolom untuk Kode Kurir
                 TextColumn::make('code')
-                    ->searchable(),
+                    ->label('Kode')
+                    ->searchable()
+                    ->sortable(),
+
+                // Kolom untuk Nama Kurir
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Nama Kurir')
+                    ->searchable()
+                    ->sortable(),
+
+                // Kolom untuk Status Aktif (Boolean/Toggle)
                 IconColumn::make('is_active')
-                    ->boolean(),
+                    ->label('Aktif')
+                    // Menggunakan ikon atau badge
+                    ->boolean()
+                    ->sortable(),
+
+                // Kolom Opsional: Tanggal Dibuat (meskipun model tidak menggunakan timestamps)
+                // Jika Anda menambahkan timestamps di masa depan, kolom ini akan berguna.
+                // TextColumn::make('created_at')
+                //     ->label('Dibuat Pada')
+                //     ->dateTime()
+                //     ->sortable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                // Filter berdasarkan status aktif/nonaktif
+                TernaryFilter::make('is_active')
+                    ->label('Status Kurir')
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Nonaktif')
+                    ->indicator('Status: Aktif/Nonaktif'),
             ])
-            ->recordActions([
-                ViewAction::make(),
+            ->actions([
                 EditAction::make(),
                 DeleteAction::make(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

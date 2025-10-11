@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cart;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Address; // pastikan ada, atau sesuaikan namespace/model Address kamu
+use App\Models\Auth\CustomerAddress;
+use App\Models\CartProduct\Cart;
+use App\Models\OrderProduct\Order;
+use App\Models\OrderProduct\OrderItem;
 use App\Services\CartService;
 use App\Services\MidtransGateway;
 use Illuminate\Http\Request;
@@ -17,12 +17,19 @@ class CheckoutController extends Controller
 {
     public function index(Request $request, CartService $cartService)
     {
-        $cart = Cart::with(['cartItems.variant.product'])
-            ->when(Auth::guard('customer')->id(), fn($q) => $q->where('user_id', Auth::guard('customer')->id()))
-            ->when(!Auth::guard('customer')->id(), fn($q) => $q->where('session_id', $request->session()->getId()))
+        $cart = Cart::with(['items.product'])
+            ->when(Auth::id(), fn($q) => $q->where('customer_id', Auth::id()))
+            ->when(!Auth::id(), fn($q) => $q->where('session_id', $request->session()->getId()))
             ->first();
 
-        if (!$cart || $cart->cartItems->isEmpty()) {
+        if (!$cart || $cart->items->isEmpty()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Keranjang kosong.',
+                    'redirect_url' => route('cart.index')
+                ], 400);
+            }
             return redirect()->route('cart.index')->with('warning', 'Keranjang kosong.');
         }
 
@@ -34,7 +41,8 @@ class CheckoutController extends Controller
 
     public function place(Request $request, CartService $cartService, MidtransGateway $gateway)
     {
-        $validated = $request->validate([
+        // Custom validation error handling for AJAX requests
+        $validator = \Validator::make($request->all(), [
             'first_name'      => ['required','string','max:100'],
             'last_name'       => ['required','string','max:100'],
             'phone'           => ['required','string','max:30'],
@@ -42,18 +50,38 @@ class CheckoutController extends Controller
             'city'            => ['required','string','max:100'],
             'province'        => ['required','string','max:100'],
             'zip'             => ['required','string','max:20'],
-            'payment_method'  => ['required', Rule::in(['bank_transfer','credit_card','e_wallet','cod'])],
+            'payment_method'  => ['required', Rule::in(['bank_transfer','credit_card','e_wallet','cod','midtrans'])],
             // optional:
             'billing_same'    => ['sometimes','boolean'],
         ]);
 
-        $cart = Cart::with(['cartItems.variant.product'])
-            ->when(Auth::id(), fn($q) => $q->where('user_id', Auth::id()))
+        if ($validator->fails()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        $cart = Cart::with(['items.product'])
+            ->when(Auth::id(), fn($q) => $q->where('customer_id', Auth::id()))
             ->when(!Auth::id(), fn($q) => $q->where('session_id', $request->session()->getId()))
             ->lockForUpdate()
             ->first();
 
-        if (!$cart || $cart->cartItems->isEmpty()) {
+        if (!$cart || $cart->items->isEmpty()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Keranjang kosong.',
+                    'errors' => ['cart' => ['Keranjang kosong.']]
+                ], 422);
+            }
             return back()->withErrors(['cart' => 'Keranjang kosong.'])->withInput();
         }
 
@@ -61,27 +89,27 @@ class CheckoutController extends Controller
         $cartService->recalculate($cart);
 
         // 1) Simpan alamat pengiriman (dan billing = sama, untuk sederhana)
-        //    >>> SESUAIKAN field Address::create([...]) dengan skema Address kamu <<<
-        $shipping = Address::create([
-            'user_id'      => Auth::id(),
-            'fullname'     => trim($validated['first_name'].' '.$validated['last_name']), // atau first_name/last_name di tabelmu
-            'phone'        => $validated['phone'],
-            'address'      => $validated['address'],     // mis. line1
-            'city'         => $validated['city'],
-            'province'     => $validated['province'],
-            'postal_code'  => $validated['zip'],
+        $shipping = CustomerAddress::create([
+            'customer_id'      => Auth::id(),
+            'first_name'       => $validated['first_name'],
+            'last_name'        => $validated['last_name'],
+            'phone'            => $validated['phone'],
+            'address'          => $validated['address'],
+            'city'             => $validated['city'],
+            'province'         => $validated['province'],
+            'postal_code'      => $validated['zip'],
         ]);
 
         $billingId = $shipping->id; // jika beda alamat, buat Address lagi dari input billing
 
         // 2) Buat Order + OrderItems (sesuai field model)
-        $order = DB::transaction(function () use ($cart, $shipping, $billingId) {
+        $order = DB::transaction(function () use ($cart, $shipping, $billingId, $validated) {
             $orderNo = 'ORD-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -6));
 
             /** @var Order $order */
             $order = Order::create([
                 'order_no'         => $orderNo,
-                'user_id'          => Auth::id(),
+                'customer_id'      => Auth::id(),
                 'currency'         => $cart->currency ?? 'IDR',
                 'status'           => 'pending',
                 'subtotal_amount'  => (float) $cart->subtotal_amount,
@@ -91,23 +119,21 @@ class CheckoutController extends Controller
                 'grand_total'      => (float) $cart->grand_total,
                 'shipping_address_id' => $shipping->id,
                 'billing_address_id'  => $billingId,
-                'applied_promos'   => $cart->applied_promos, // array -> cast ke json otomatis
-                'notes'            => null, // nanti diupdate dgn info payment
+                'applied_promos'   => $cart->applied_promos,
+                'notes'            => null,
                 'placed_at'        => now(),
             ]);
 
-            foreach ($cart->cartItems as $ci) {
-                $product   = $ci->variant?->product;
-                $variant   = $ci->variant;
+            foreach ($cart->items as $ci) {
+                $product   = $ci->product;
                 $unitPrice = (float) $ci->unit_price;
                 $rowTotal  = (float) $ci->row_total;
 
                 OrderItem::create([
                     'order_id'        => $order->id,
                     'product_id'      => $product?->id,
-                    'variant_id'      => $variant?->id,
-                    'name'            => $product?->name ?? $variant?->name ?? ('Variant #'.$ci->variant_id),
-                    'sku'             => $variant?->sku ?? ($product?->sku ?? null),
+                    'name'            => $product?->name,
+                    'sku'             => $product?->sku,
                     'qty'             => (int) $ci->qty,
                     'unit_price'      => $unitPrice,
                     'discount_amount' => 0,
@@ -119,9 +145,9 @@ class CheckoutController extends Controller
             return $order;
         });
 
-        // 3) Jika COD: langsung kosongkan cart & selesai
+        // 3) Jika COD: langsung konfirmasi dan kosongkan cart
         if ($validated['payment_method'] === 'cod') {
-            $cart->cartItems()->delete();
+            $cart->items()->delete();
             $cart->update([
                 'subtotal_amount' => 0,
                 'discount_amount' => 0,
@@ -131,45 +157,146 @@ class CheckoutController extends Controller
             ]);
 
             $order->update(['status' => 'confirmed', 'notes' => json_encode(['payment' => 'COD'])]);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pesanan berhasil dibuat dengan metode COD.',
+                    'redirect_url' => route('checkout.thankyou', $order),
+                    'order' => [
+                        'id' => $order->id,
+                        'order_no' => $order->order_no,
+                        'status' => $order->status,
+                        'grand_total' => $order->grand_total
+                    ]
+                ]);
+            }
+
             return redirect()->route('checkout.thankyou', $order);
         }
 
-        // 4) Non-COD → buat transaksi ke gateway (Midtrans Snap sebagai contoh)
+        // 4) Payment menggunakan Midtrans (untuk semua metode non-COD)
         try {
+            // Gunakan payment method yang dipilih user
             $payment = $gateway->createPayment($order, $validated['payment_method']);
 
-            // simpan token/url di kolom notes (json) — model Order tidak punya kolom payment_*
+            // simpan token/url di kolom notes (json)
             $notes = [
                 'gateway' => 'midtrans',
-                'token'   => $payment['token']        ?? null,
-                'url'     => $payment['redirect_url'] ?? null,
-                'method'  => $validated['payment_method'],
+                'snap_token' => $payment['token'] ?? null,
+                'redirect_url' => $payment['redirect_url'] ?? null,
+                'payment_method' => $validated['payment_method'],
+                'created_at' => now()->toISOString(),
             ];
             $order->update(['notes' => json_encode($notes)]);
 
+            // Clear cart sebelum redirect/response
+            $cart->items()->delete();
+            $cart->update([
+                'subtotal_amount' => 0,
+                'discount_amount' => 0,
+                'shipping_amount' => 0,
+                'tax_amount'      => 0,
+                'grand_total'     => 0,
+            ]);
+
             if (!empty($payment['redirect_url'])) {
-                // kosongkan cart sebelum diarahkan (opsional, atau kosongkan setelah callback sukses)
-                $cart->cartItems()->delete();
-                $cart->update([
-                    'subtotal_amount' => 0,
-                    'discount_amount' => 0,
-                    'shipping_amount' => 0,
-                    'tax_amount'      => 0,
-                    'grand_total'     => 0,
-                ]);
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Pembayaran berhasil dibuat. Anda akan diarahkan ke halaman pembayaran Midtrans.',
+                        'redirect_url' => $payment['redirect_url'],
+                        'external_redirect' => true,
+                        'order' => [
+                            'id' => $order->id,
+                            'order_no' => $order->order_no,
+                            'status' => $order->status,
+                            'grand_total' => $order->grand_total
+                        ],
+                        'payment' => [
+                            'gateway' => 'midtrans',
+                            'method' => 'midtrans',
+                            'snap_token' => $payment['token'] ?? null,
+                            'redirect_url' => $payment['redirect_url']
+                        ]
+                    ]);
+                }
 
                 return redirect()->away($payment['redirect_url']);
             }
 
+            // Jika tidak ada redirect URL (fallback)
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pesanan berhasil dibuat. Silakan lakukan pembayaran.',
+                    'redirect_url' => route('checkout.thankyou', $order),
+                    'order' => [
+                        'id' => $order->id,
+                        'order_no' => $order->order_no,
+                        'status' => $order->status,
+                        'grand_total' => $order->grand_total
+                    ],
+                    'payment' => [
+                        'gateway' => 'midtrans',
+                        'method' => 'midtrans',
+                        'snap_token' => $payment['token'] ?? null
+                    ]
+                ]);
+            }
+
             return redirect()->route('checkout.thankyou', $order);
         } catch (\Throwable $e) {
-            report($e);
-            return back()->withErrors(['payment' => 'Gagal memproses pembayaran. Coba lagi atau ganti metode.']);
+            dd($e->getMessage());
+            \Log::error('Midtrans Payment Error', [
+                'order_id' => $order->id ?? null,
+                'order_no' => $order->order_no ?? null,
+                'payment_method' => 'midtrans',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 
+    /**
+     * Thank you page after successful order
+     */
     public function thankyou(Order $order)
     {
+        // Load relationships untuk display
+        $order->load(['items.product', 'shippingAddress', 'customer']);
+
         return view('pages.checkout.thankyou', compact('order'));
+    }
+
+    /**
+     * Show order payment status (for checking payment progress)
+     */
+    public function paymentStatus(Request $request, Order $order)
+    {
+        if ($request->wantsJson() || $request->ajax()) {
+            $notes = json_decode($order->notes, true) ?? [];
+
+            return response()->json([
+                'success' => true,
+                'order' => [
+                    'id' => $order->id,
+                    'order_no' => $order->order_no,
+                    'status' => $order->status,
+                    'grand_total' => $order->grand_total,
+                    'payment_method' => $order->payment_method,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at
+                ],
+                'payment' => [
+                    'gateway' => $notes['gateway'] ?? null,
+                    'method' => $notes['payment_method'] ?? $order->payment_method,
+                    'snap_token' => $notes['snap_token'] ?? null,
+                    'redirect_url' => $notes['redirect_url'] ?? null
+                ]
+            ]);
+        }
+
+        return redirect()->route('checkout.thankyou', $order);
     }
 }

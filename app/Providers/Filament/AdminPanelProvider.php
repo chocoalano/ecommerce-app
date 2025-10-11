@@ -13,7 +13,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
-use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -22,7 +21,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Resma\FilamentAwinTheme\FilamentAwinTheme;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -49,33 +47,29 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Konten Website')
-                    ->icon('elusive-website')
-                    ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Produk Incaran')
-                    ->icon('heroicon-o-shopping-cart')
-                    ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Pesanan')
-                    ->icon('heroicon-o-shopping-bag')
-                    ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Produk')
-                    ->icon('carbon-ibm-data-product-exchange')
-                    ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Promosi')
-                    ->icon('carbon-ibm-software-watsonx-data-structured-import')
-                    ->collapsible(false),
+                    ->label('Master Data')
+                    ->icon('heroicon-o-server-stack')
+                    ->collapsible(true),
                 NavigationGroup::make()
                     ->label('Pengaturan')
                     ->icon('heroicon-o-cog-8-tooth')
-                    ->collapsible(false),
+                    ->collapsible(true),
                 NavigationGroup::make()
-                    ->label('Pengiriman')
-                    ->icon('heroicon-s-truck')
-                    ->collapsible(false),
+                    ->label('Produk')
+                    ->icon('heroicon-o-cube')
+                    ->collapsible(true),
+                NavigationGroup::make()
+                    ->label('Inventory')
+                    ->icon('heroicon-o-archive-box')
+                    ->collapsible(true),
+                NavigationGroup::make()
+                    ->label('Iklan & Promosi')
+                    ->icon('heroicon-o-megaphone')
+                    ->collapsible(true),
+                NavigationGroup::make()
+                    ->label('Penjualan')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->collapsible(true),
             ])
             ->middleware([
                 EncryptCookies::class,

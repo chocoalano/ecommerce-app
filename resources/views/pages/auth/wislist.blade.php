@@ -46,7 +46,7 @@
                 <h2 class="text-xl font-semibold text-gray-700 mb-2">Daftar Keinginan Anda Kosong</h2>
                 <p class="text-gray-500 mb-6 text-center">Tambahkan item yang Anda suka agar tidak terlupakan!</p>
                 {{-- Tombol (Flux Button diganti <a> Flowbite Primary) --}}
-                <a href="{{ route('category') }}"
+                <a href="{{ route('products.index') }}"
                     class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-center text-white
                            bg-zinc-900 rounded-full hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition duration-300">
                     Jelajahi Produk
@@ -55,7 +55,7 @@
         @else
             {{-- List Item Wishlist dan Banner --}}
             <div class="lg:grid lg:grid-cols-1 xl:grid-cols-3 lg:gap-8">
-                
+
                 {{-- KOLOM 1: List Item Wishlist --}}
                 <div class="space-y-6 lg:col-span-full xl:col-span-2">
                     @foreach ($wishlistItems as $item)
@@ -134,7 +134,7 @@
                     {{-- Banner Promosi yang Lebih Informatif dan Stylish --}}
                     <div
                         class="sticky top-8 bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 rounded-xl shadow-xl border border-indigo-500/50 h-full flex flex-col justify-between text-white">
-                        
+
                         <div class="mb-6">
                             {{-- SVG Tag Icon --}}
                             <svg class="w-10 h-10 text-white mb-3 drop-shadow-md" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,7 +1,7 @@
 @php
     // Perbaikan: Tailwind tidak punya kelas max-w-5/6 ⇒ gunakan width kustom via arbitrary value
     // Menggunakan warna background dan skema yang umum di Flowbite (gray/indigo)
-    $outerClass = 'mx-auto max-w-5/6 px-4 mx-auto h-full max-h-dvh bg-gray-50 text-gray-900 flex items-center justify-center p-16 overflow-hidden rounded-xl';
+    $outerClass = 'mx-auto max-w-5/6 px-4 mx-auto h-full max-h-dvh bg-gray-50 text-gray-900 flex items-center justify-center p-16 overflow-hidden rounded-xl border border-gray-200';
     $computedImage = $image
         ? (Str::startsWith($image, ['http://', 'https://', '/']) ? $image : asset($image))
         : asset('storage/images/galaxy-z-flip7-share-image.png');
@@ -57,14 +57,5 @@
                 />
             </div>
         </div>
-    </div>
-
-    {{-- Detail/Decorative Icon (Flowbite style) --}}
-    <div class="absolute bottom-8 left-8 text-gray-400 z-10" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
     </div>
 </div>
