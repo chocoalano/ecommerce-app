@@ -14,8 +14,9 @@
             {{-- KIRI: BRAND & NAVIGASI (Desktop) --}}
             <div class="flex items-center space-x-4 rtl:space-x-reverse shrink-0">
                 {{-- Logo/Brand --}}
-                <a href="{{ url('/') }}" class="flex items-center space-x-2 rtl:space-x-reverse">
-                    <span class="self-center text-xl font-bold whitespace-nowrap text-gray-900">{{ config('app.name') }}</span>
+                <a href="{{ url('/') }}" class="flex items-center space-x-2 rtl:space-x-reverse" wire:navigate aria-label="Kembali ke beranda">
+                    <img src="{{ asset('images/logo-puranura-id.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
+                    {{-- <span class="self-center text-xl font-bold whitespace-nowrap text-gray-900">{{ config('app.name') }}</span> --}}
                 </a>
 
                 {{-- Dropdown Kategori Desktop --}}
