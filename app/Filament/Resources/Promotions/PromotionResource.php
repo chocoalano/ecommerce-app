@@ -6,6 +6,7 @@ use App\Filament\Resources\Promotions\Pages\ManagePromotions;
 use App\Models\Promo\Promotion;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\FileUpload;
 use UnitEnum;
 use Closure;
 use Filament\Actions\Action;
@@ -52,7 +53,7 @@ class PromotionResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Closure $set, $state) {
+                            ->afterStateUpdated(function ($set, $state) {
                                 // Auto-set landing_slug default jika kosong
                                 $set('landing_slug', fn ($get) => $get('landing_slug') ?: Str::slug($state));
                             })
@@ -111,6 +112,14 @@ class PromotionResource extends Resource
                             ->default(true)
                             ->inline(false)
                             ->columnSpan(3),
+
+                        FileUpload::make('image')
+                            ->label('Gambar banner')
+                            ->helperText('Muat gambar yang akan dijadikan banner/ditampilkan pada banner')
+                            ->disk('public')
+                            ->directory('images/promotion')
+                            ->required(false)
+                            ->columnSpanFull(),
                     ]),
                 ])
                 ->columnSpanFull(),

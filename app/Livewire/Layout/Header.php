@@ -44,17 +44,11 @@ class Header extends Component
         // Cache kategori untuk performa
         $categories = Cache::remember('menu:categories:top-with-children', 600, function () {
             return Category::query()
-                ->select(['id', 'slug', 'name', 'description', 'is_active'])
+                ->select(['id', 'slug', 'name', 'description', 'is_active', 'image'])
                 ->where('is_active', true)
                 ->whereNull('parent_id')
                 ->orderBy('name')
-                ->with([
-                    'children' => function ($q) {
-                        $q->select(['id', 'slug', 'name', 'description', 'image', 'is_active'])
-                          ->where('is_active', true)
-                          ->orderBy('name');
-                    }
-                ])
+                ->with('children')
                 ->get()
                 ->map(function ($cat) {
                     return (object) [
@@ -62,6 +56,7 @@ class Header extends Component
                         'name' => $cat->name,
                         'slug' => $cat->slug,
                         'description' => $cat->description,
+                        'image' => $cat->image,
                         'subCategories' => $cat->children->map(fn ($child) => (object) [
                             'slug' => $child->slug,
                             'name' => $child->name,
@@ -69,7 +64,6 @@ class Header extends Component
                     ];
                 });
         });
-
         return view('livewire.layout.header', [
             'categories' => $categories,
             'user' => Auth::guard('customer')->user(),

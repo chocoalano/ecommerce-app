@@ -28,7 +28,7 @@
         {{-- Galeri --}}
         <div class="lg:sticky lg:top-8 self-start">
             <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden border border-gray-100">
-                <img src="{{ $product->primaryImageUrl ?? asset('images/smartphone.png') }}" alt="{{ $product->name }}"
+                <img src="{{ asset('storage/'.$product->primaryImageUrl ?? 'images/smartphone.png') }}" alt="{{ $product->name }}"
                      class="w-full h-full object-contain p-8 sm:p-12" loading="eager">
             </div>
 
@@ -419,10 +419,10 @@
                                         // Fallback - wait a bit longer for toast system to load
                                         let attempts = 0;
                                         const maxAttempts = 5;
-                                        
+
                                         const tryToast = () => {
                                             attempts++;
-                                            
+
                                             if (typeof window.showToast === 'function') {
                                                 window.showToast(message, type);
                                             } else if (typeof toastManager !== 'undefined' && toastManager.show) {
@@ -440,7 +440,7 @@
                                                 }
                                             }
                                         };
-                                        
+
                                         tryToast();
                                     }
                                 }

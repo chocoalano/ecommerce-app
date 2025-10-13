@@ -4,7 +4,7 @@
             onScroll(); window.addEventListener('scroll', onScroll);
          "
          class="relative isolate overflow-hidden bg-gradient-to-br from-zinc-50 to-white transition-all duration-300 ease-out"
-         :class="isCompact ? 'max-w-5/6 mx-auto rounded-xl px-4 sm:px-6 lg:px-8' : 'max-w-none w-full px-0'">
+         :class="isCompact ? 'max-w-5/6 mx-auto rounded-xl px-4 sm:px-6 lg:px-8' : 'max-w-none w-full px-20'">
     <!-- Overlay -->
     <div class="absolute inset-0 bg-repeat opacity-5"
          style="background-image:url('data:image/svg+xml;utf8,<svg width=&quot;4&quot; height=&quot;4&quot; viewBox=&quot;0 0 4 4&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><circle cx=&quot;2&quot; cy=&quot;2&quot; r=&quot;1&quot; fill=&quot;%239ca3af&quot;/></svg>');">
@@ -39,7 +39,7 @@
             <!-- Deskripsi -->
             <p class="mt-4 text-gray-700 transition-all duration-300 font-semibold max-w-3xl mx-auto"
                :class="isCompact ? 'text-md sm:text-lg' : 'text-lg sm:text-2xl'">
-                {{ $heroDesc }}
+                {!! $heroDesc !!}
             </p>
 
             <!-- Tagline tambahan -->
@@ -55,7 +55,7 @@
                 <a href="{{ $heroLink }}"
                    class="inline-flex items-center justify-center bg-zinc-900 text-white hover:bg-zinc-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
                    :class="isCompact ? 'px-6 py-3 text-base font-semibold' : 'px-8 py-4 text-lg font-bold'">
-                    Cek Harga Trade-in
+                    Periksa sekarang
                 </a>
 
                 @if ($hero)
@@ -77,15 +77,14 @@
                      :class="isCompact ? 'max-w-[960px]' : 'max-w-[1500px]'">
                     <div class="w-full overflow-visible rounded-2xl"
                          :class="isCompact ? 'aspect-[16/7]' : 'aspect-[16/6]'">
-                        <img src="{{ $heroImg }}"
-                             alt="{{ $heroTitle }}"
-                             loading="eager"
-                             fetchpriority="high"
-                             decoding="async"
-                             class="h-full w-full object-contain select-none pointer-events-none transition-transform duration-700 ease-[cubic-bezier(.2,.7,.2,1)] will-change-transform drop-shadow-2xl"
-                             :class="isCompact ? 'scale-100 translate-y-0' : 'scale-110 sm:scale-125 translate-y-1'"
-                             style="transform-origin:center;" />
-                    </div>
+                        <img src="{{ asset('storage/'.$heroImg) }}"
+                            alt="{{ $heroTitle }}"
+                            loading="eager"
+                            fetchpriority="high"
+                            decoding="async"
+                            class="h-full w-full object-cover select-none pointer-events-none transition-transform duration-700 ease-[cubic-bezier(.2,.7,.2,1)] will-change-transform drop-shadow-2xl rounded-2xl"
+                            :class="isCompact ? 'scale-100 translate-y-0' : 'scale-110 sm:scale-125 translate-y-1'"
+                            style="transform-origin:center;" />
                 </div>
             </div>
         </div>

@@ -40,17 +40,63 @@
                             <ul class="space-y-1">
                                 @foreach ($categories as $category)
                                     <li>
-                                        <a href="{{ route('products.index', $category->slug) }}" class="flex items-center p-3 rounded-lg hover:bg-gray-100 transition duration-150 group">
-                                            <svg class="w-5 h-5 me-3 text-gray-500 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2m-3-12v12m0 0l4-4m-4 4l-4-4M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                            </svg>
-                                            <div>
-                                                <div class="font-medium text-sm">{{ $category->name }}</div>
-                                                @if(isset($category->description))
-                                                    <span class="text-xs text-gray-500">{{ $category->description }}</span>
+                                        <div x-data="{ open: false }" class="group">
+                                            {{-- Main Category --}}
+                                            <a href="{{ route('products.index', $category->slug) }}"
+                                               @if(isset($category->subCategories) && $category->subCategories->count())
+                                                   @mouseenter="open = true" @mouseleave="open = false"
+                                               @endif
+                                               class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition duration-150">
+                                                <div class="flex items-center">
+                                                    <img src="{{ asset('storage/images/' . ($category->image ?? 'default.png')) }}" alt="{{ $category->name }}" class="w-10 h-10 me-3 object-contain" />
+                                                    <div>
+                                                        <div class="font-medium text-sm">{{ $category->name }}</div>
+                                                        @if(isset($category->description))
+                                                            <span class="text-xs text-gray-500">{{ $category->description }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                @if(isset($category->subCategories) && $category->subCategories->count())
+                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                    </svg>
                                                 @endif
-                                            </div>
-                                        </a>
+                                            </a>
+
+                                            {{-- Subcategories Dropdown --}}
+                                            @if(isset($category->subCategories) && $category->subCategories->count())
+                                                <div x-show="open"
+                                                     @mouseenter="open = true" @mouseleave="open = false"
+                                                     x-transition:enter="transition ease-out duration-200"
+                                                     x-transition:enter-start="opacity-0 translate-x-4"
+                                                     x-transition:enter-end="opacity-100 translate-x-0"
+                                                     x-transition:leave="transition ease-in duration-150"
+                                                     x-transition:leave-start="opacity-100 translate-x-0"
+                                                     x-transition:leave-end="opacity-0 translate-x-4"
+                                                     class="absolute left-full top-0 ml-2 w-56 bg-white border border-gray-200 shadow-lg rounded-lg z-40">
+                                                    <div class="p-2">
+                                                        <div class="px-3 py-2 text-xs font-semibold text-gray-700 border-b border-gray-100 mb-1">
+                                                            {{ $category->name }}
+                                                        </div>
+                                                        <ul class="space-y-1">
+                                                            @foreach($category->subCategories as $subCategory)
+                                                                <li>
+                                                                    <a href="{{ route('products.index', $subCategory->slug) }}"
+                                                                       class="flex items-center p-2 rounded-md hover:bg-gray-100 transition duration-150">
+                                                                        <div>
+                                                                            <div class="font-medium text-sm text-gray-900">{{ $subCategory->name }}</div>
+                                                                            @if(isset($subCategory->description))
+                                                                                <span class="text-xs text-gray-500">{{ $subCategory->description }}</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </a>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </li>
                                 @endforeach
                             </ul>

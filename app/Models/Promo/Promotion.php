@@ -33,7 +33,7 @@ class Promotion extends Model
     ];
 
     protected $fillable = [
-        'code','name','type','landing_slug','description',
+        'code','name','type','landing_slug','description','image',
         'start_at','end_at','is_active','priority',
         'max_redemption','per_user_limit','conditions_json',
         'show_on','custom_html','page',

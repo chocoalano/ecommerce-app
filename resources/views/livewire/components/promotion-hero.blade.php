@@ -19,7 +19,7 @@
 
                 @if(!empty($subtitle))
                     <p class="text-lg md:text-xl lg:text-2xl text-gray-600">
-                        {{ $subtitle }}
+                        {!! $subtitle !!}
                     </p>
                 @endif
 
@@ -49,7 +49,7 @@
             {{-- Gambar --}}
             <div class="relative flex items-center justify-center mt-10 md:mt-0">
                 <img
-                    src="{{ $computedImage }}"
+                    src="{{ ($computedImage) }}"
                     alt="{{ $imageAlt }}"
                     class="w-full h-auto object-contain z-10"
                     loading="eager"

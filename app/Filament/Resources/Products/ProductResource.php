@@ -161,6 +161,8 @@ class ProductResource extends Resource
                         ->schema([
                             FileUpload::make('url')
                                 ->label('URL Media')
+                                ->disk('public')
+                                ->directory('images/products')
                                 ->required()
                                 ->helperText('Tempel URL gambar/video. Untuk file lokal, unggah ke storage lalu isi path URL-nya.')
                                 ->columnSpanFull(),
@@ -171,7 +173,7 @@ class ProductResource extends Resource
                                 ->minValue(0)
                                 ->default(0)
                                 ->helperText('Kecil = tampil lebih dulu.'),
-                            
+
                             Toggle::make('is_primary')
                                 ->label('Media Utama?')
                                 ->inline(false)
@@ -193,12 +195,8 @@ class ProductResource extends Resource
             ->columns([
                 ImageColumn::make('media.url')
                     ->label('Gambar')
-                    ->getStateUsing(function ($record) {
-                        // ambil media utama; fallback: media pertama
-                        $primary = $record->media()->where('is_primary', true)->first();
-                        return $primary?->url ?? $record->media()->orderBy('sort_order')->value('url');
-                    })
                     ->square()
+                    ->stacked()
                     ->height(44),
 
                 TextColumn::make('sku')->label('SKU')->sortable()->searchable(),

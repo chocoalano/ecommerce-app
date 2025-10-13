@@ -68,12 +68,11 @@
                     @foreach ($data as $i => $p)
                         {{-- Gunakan data dari $p untuk card --}}
                         @php
-                        $product = \App\Models\Product\Product::where('sku', $p['sku'] ?? 'default_sku')->first();
-                            $id = $product->id ?? null;
-                            $sku = $product->sku ?? 'default_sku';
-                            $title_card = $product->title ?? 'Nama Produk';
-                            $price = $product->price ?? 'Rp 0';
-                            $image = $product->image ?? 'path/to/default/image.jpg';
+                            $id = $p['id'] ?? null;
+                            $sku = $p['sku'] ?? 'default_sku';
+                            $title_card = $p['title'] ?? 'Nama Produk';
+                            $price = $p['price'] ?? 'Rp 0';
+                            $image = asset('storage/' . ($p['image'] ?? 'default.svg'));
                         @endphp
 
                         <article class="group snap-start shrink-0

@@ -41,7 +41,10 @@ class PromotionHeroSecondary extends Component
         $promo = Cache::remember($cacheKey, $this->cacheTtl, function () {
             $query = Promotion::query()
                 ->where('is_active', true)
-                ->orderByDesc('priority');
+                ->where('start_at', '<=', now())
+                ->where('end_at', '>=', now())
+                ->orderByDesc('priority')
+                ->orderByDesc('created_at');
 
             if ($this->promotionId) {
                 $query->whereKey($this->promotionId);
@@ -53,32 +56,29 @@ class PromotionHeroSecondary extends Component
         });
 
         // Mapping field + fallback
-        $title = data_get($promo, 'title') ?? data_get($promo, 'name') ?? 'Aksesoris Ponsel';
-        $desc  = data_get($promo, 'subtitle') ?? data_get($promo, 'description') ?? 'Temukan aksesoris terbaik untuk melengkapi pengalaman ponsel Anda. Dari casing hingga power bank—semuanya ada.';
-        $badge = data_get($promo, 'type', 'Promo');
-        $slug  = data_get($promo, 'landing_slug');
+        $title = data_get($promo, 'title') ?? 'Aksesoris Ponsel';
+        $desc  = data_get($promo, 'description') ?? 'Temukan aksesoris terbaik untuk melengkapi pengalaman ponsel Anda. Dari casing hingga power bank—semuanya ada.';
+        $badge = data_get($promo, 'badge') ?? 'Promo';
+        $slug  = data_get($promo, 'slug');
 
         // CTA utama
-        $ctaLabel = data_get($promo, 'cta_label', 'Jelajahi Sekarang');
-        $ctaUrl   = data_get($promo, 'cta_url');
-        if (!$ctaUrl && $slug && Route::has('category')) {
-            $ctaUrl = route('products.index', ['category' => $slug]);
+        $ctaLabel = data_get($promo, 'button_text', 'Jelajahi Sekarang');
+        $ctaUrl   = data_get($promo, 'button_url');
+        if (!$ctaUrl && $slug && Route::has('products.index')) {
+            $ctaUrl = route('products.index', ['promotion' => $slug]);
         }
         $ctaUrl = $ctaUrl ?: '#';
 
-        // CTA sekunder (opsional)
-        $secondaryLabel = data_get($promo, 'secondary_label');
-        $secondaryUrl   = data_get($promo, 'secondary_url');
-        if (!$secondaryUrl && $slug && Route::has('promotion.show')) {
-            $secondaryUrl = route('promotion.show', ['promotion' => $slug]);
-        }
+        // CTA sekunder (opsional) - remove if not needed
+        $secondaryLabel = null;
+        $secondaryUrl   = null;
 
         // Gambar
-        $image = data_get($promo, 'image') ?? data_get($promo, 'image_url') ?? asset('images/galaxy-z-flip7-share-image.png');
+        $image = asset("storage/".data_get($promo, 'image') ?? 'images/default.svg');
         if ($image && ! Str::startsWith($image, ['http://', 'https://', 'data:image'])) {
             $image = asset($image);
         }
-        $imageAlt = data_get($promo, 'image_alt') ?? $title;
+        $imageAlt = data_get($promo, 'title', 'Promotion Image');
 
         $this->data = [
             'title'          => $title,

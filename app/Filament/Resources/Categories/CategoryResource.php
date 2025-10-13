@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Categories;
 use App\Filament\Resources\Categories\Pages\ManageCategories;
 use App\Models\Product\Category;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Str;
 use UnitEnum;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -87,9 +88,9 @@ class CategoryResource extends Resource
                         // Simpan path gambar (string). Jika ingin upload, ganti ke FileUpload (disk public).
                         FileUpload::make('image')
                             ->label('Gambar')
-                            ->directory('category-products')
-                            ->visibility('public')
+                            ->directory('images/category-products')
                             ->helperText('URL/Path gambar kategori. Disarankan rasio 1:1, ukuran ≥ 600px.')
+                            ->required(true)
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),

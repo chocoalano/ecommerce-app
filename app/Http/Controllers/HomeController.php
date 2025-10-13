@@ -50,28 +50,25 @@ class HomeController extends Controller
         $recommendedProducts = $this->getRecommendedProducts();
 
         // 4. Data Hero dengan cache
-        $heroData = Cache::remember('hero:data', 300, function () {
-            $hero = Promotion::with('products')
-                ->select(['id', 'name', 'type', 'description'])
-                ->where('show_on', 'HERO')
-                ->first();
-            $heroProductMediaUrl = asset('images/smartphone.png');
-            if (! empty($hero?->products) && ! empty($hero->products[0]->media)) {
-                $heroProductMediaUrl = $hero->products[0]->media[0]->url ?? asset('images/smartphone.png');
-            }
+        $hero = Promotion::with('products')
+            ->select(['id', 'name', 'type', 'description', 'image'])
+            ->where([
+                'show_on' => 'HERO',
+                'page' => 'beranda',
+                ])
+            ->first();
 
-            return [
-                'hero' => $hero,
-                'heroTitle' => $hero?->name ?? 'Upgrade Ponsel Lama Anda',
-                'heroType' => $hero?->type ?? 'Special Offer',
-                'heroDesc' => $hero?->description ?? 'Dapatkan diskon besar dengan Trade-in eksklusif kami!',
-                'heroTag' => null,
-                'heroImg' => $heroProductMediaUrl,
-                'heroLink' => $hero?->link_url ?? route('products.index'),
-                'heroMore' => '#',
-                'products' => $hero?->products ?? [],
-            ];
-        });
+        $heroData = [
+            'hero' => $hero,
+            'heroTitle' => $hero?->name ?? 'Upgrade Ponsel Lama Anda',
+            'heroType' => $hero?->type ?? 'Special Offer',
+            'heroDesc' => $hero?->description ?? 'Dapatkan diskon besar dengan Trade-in eksklusif kami!',
+            'heroTag' => null,
+            'heroImg' => $hero?->image ?? 'images/hero-banner.jpg',
+            'heroLink' => route('products.index'),
+            'heroMore' => '#',
+            'products' => $hero?->products ?? [],
+        ];
 
         // 5. Data Kategori dengan cache
         $categoriesFirst = Cache::remember('categories:first', 300, function () {
@@ -102,8 +99,7 @@ class HomeController extends Controller
      */
     protected function getRecommendedProducts(): array
     {
-        return Cache::remember('products:recommended:10', 300, function () {
-            return Product::query()
+        return Product::query()
                 ->select(['id', 'sku', 'name', 'slug', 'created_at', 'base_price'])
                 ->with([
                     'primaryMedia:id,product_id,url',
@@ -119,6 +115,7 @@ class HomeController extends Controller
                     $rawPrice = $p->base_price ?? 0;
 
                     return [
+                        'id'=> $p->id,
                         'sku' => $p->sku,
                         'title' => $p->name,
                         'image' => $image,
@@ -127,6 +124,5 @@ class HomeController extends Controller
                     ];
                 })
                 ->toArray();
-        });
     }
 }

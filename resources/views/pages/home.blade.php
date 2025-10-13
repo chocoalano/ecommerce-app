@@ -47,7 +47,7 @@ SEO Slot
                 ]" :secondary="[
                     'label' => 'Katalog',
                     'href' => Route::has('promotion.show') ? route('promotion.show', ['promotion' => $p1Slug]) : '#',
-                ]" :image="$p1Data['image']"
+                ]" :image="asset('storage/'.$p1Data['image'])"
             :imageAlt="$p1Data['name']" />
     @else
         <div class="mt-10 mb-10"></div>

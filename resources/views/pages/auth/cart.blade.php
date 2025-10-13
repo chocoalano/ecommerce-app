@@ -45,27 +45,11 @@
                         /** @var \App\Models\CartProduct\CartItem $item */
                         $product = $item->product;
                         $title = $product?->name ?? $item->product_name ?? ('#' . $item->product_id);
-                        $image = $product?->primary_image_url
-                            ?? $product?->media->first()?->url
-                            ?? asset('images/galaxy-z-flip7-share-image.png');
+                        $image = asset('storage/'. ($product?->primary_image_url ?? 'images/galaxy-z-flip7-share-image.png'));
                         $stock = (int) ($product?->stock ?? 0);
                         $unitPrice = (float) $item->unit_price;
                         $rowTotal = (float) $item->row_total;
                         $qty = (int) $item->qty;
-                        $variantText = '';
-                        // Check for options field in CartItem model
-                        if (!empty($item->options) && is_array($item->options)) {
-                            $variantText = collect($item->options)
-                                ->map(fn($v, $k) => ucfirst($k) . ': ' . $v)
-                                ->implode(', ');
-                        }
-                        // Check for bundle_name or note
-                        if ($item->bundle_name) {
-                            $variantText = $variantText ? $variantText . ', Bundle: ' . $item->bundle_name : 'Bundle: ' . $item->bundle_name;
-                        }
-                        if ($item->note) {
-                            $variantText = $variantText ? $variantText . ', Note: ' . $item->note : 'Note: ' . $item->note;
-                        }
                     @endphp
 
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-start bg-gray-100 p-4 sm:p-6 rounded-xl transition hover:shadow-lg border border-gray-200" data-cart-item="{{ $item->id }}">
@@ -82,8 +66,8 @@
                                        class="text-lg font-semibold text-gray-900 hover:text-zinc-700 transition line-clamp-2">
                                         {{ $title }}
                                     </a>
-                                    @if ($variantText)
-                                        <p class="text-sm text-gray-500 mt-1">{{ $variantText }}</p>
+                                    @if ($product->short_desc)
+                                        <p class="text-sm text-gray-500 mt-1">{{ $product->short_desc }}</p>
                                     @endif
                                     @if ($qty > $stock && $stock >= 0)
                                         <p class="text-xs text-red-600 font-medium mt-1">Stok tidak mencukupi! Tersisa {{ $stock }}.</p>

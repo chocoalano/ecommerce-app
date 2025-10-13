@@ -32,7 +32,7 @@
 
         {{-- Grid kategori --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            @foreach ($category as $cat)
+            @foreach ($category as $cat => $value)
                 <div
                     class="group relative flex flex-col items-center rounded-2xl bg-gray-100
          ring-1 ring-gray-200/70 p-5 sm:p-6 text-center
@@ -40,12 +40,12 @@
 
                     {{-- Nama kategori --}}
                     <h3 class="!text-2xl font-extrabold sm:text-lg text-gray-900 mb-4">
-                        {{ $cat['name'] }}
+                        {{ $value->name }}
                     </h3>
 
                     {{-- Gambar kategori --}}
                     <div class="w-full text-center aspect-square max-w-[200px] sm:max-w-[220px] overflow-hidden">
-                        <img src="{{ asset($cat['image']) }}" alt="Kategori {{ $cat['name'] }}" loading="lazy"
+                        <img src="{{ asset("storage/images/".$value->image) }}" alt="Kategori {{ $value->name }}" loading="lazy"
                             class="h-full w-full object-cover transition duration-500 ease-in-out group-hover:scale-110" />
                     </div>
 
@@ -53,7 +53,7 @@
                     <div
                         class="mt-2 w-full opacity-0 translate-y-5 transition duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                         {{-- Flux Button 'Lihat Produk' diganti dengan tag <a> --}}
-                        <a href="{{ route('products.index', ['category'=>$cat['slug']]) }}"
+                        <a href="{{ route('products.index', ['category'=>$value->slug]) }}"
                             class="inline-flex items-center justify-center
                                    w-48 h-13 bg-zinc-900 text-white hover:bg-zinc-800
                                    font-semibold transition duration-300

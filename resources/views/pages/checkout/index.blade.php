@@ -151,7 +151,6 @@
                             $product = $item->product;
                             $title = $product?->name ?? $item->product_name ?? ('Item #'.$item->product_id);
                             $image = $product?->primary_image_url ?? $product?->media->first()?->url ?? null;
-
                             // Format variant/options info
                             $variantInfo = '';
                             if (!empty($item->options) && is_array($item->options)) {
@@ -166,7 +165,7 @@
                         <div class="flex items-start space-x-3">
                             @if($image)
                                 <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                    <img src="{{ $image }}" alt="{{ $title }}" class="w-full h-full object-cover">
+                                    <img src="{{ asset("storage/".$image) }}" alt="{{ $title }}" class="w-full h-full object-cover">
                                 </div>
                             @endif
                             <div class="flex-1 min-w-0">

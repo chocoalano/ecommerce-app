@@ -14,10 +14,10 @@
             </h1>
 
             <p class="text-base sm:text-lg text-gray-600 mb-6 max-w-lg mx-auto md:mx-0">
-                {{ $data['desc'] ?? '' }}
+                {!! $data['desc'] ?? '' !!}
             </p>
 
-            <div class="flex items-center gap-3 justify-center md:justify-start">
+            <div class="flex items-center gap-3 justify-center md:justify-start mt-10">
                 @if(!empty($data['ctaLabel']) && !empty($data['ctaUrl']))
                     <a href="{{ $data['ctaUrl'] }}"
                        class="inline-flex items-center justify-center px-6 py-3 text-sm sm:text-base font-semibold text-white
@@ -28,7 +28,7 @@
 
                 @if(!empty($data['secondaryLabel']) && !empty($data['secondaryUrl']))
                     <a href="{{ $data['secondaryUrl'] }}"
-                       class="inline-flex items-center justify-center px-6 py-3 text-sm sm:text-base font-semibold text-zinc-900
+                       class="mt-10 inline-flex items-center justify-center px-6 py-3 text-sm sm:text-base font-semibold text-zinc-900
                               border border-zinc-300 rounded-full hover:bg-zinc-100 focus:ring-4 focus:ring-zinc-100 transition duration-300">
                         {{ $data['secondaryLabel'] }}
                     </a>

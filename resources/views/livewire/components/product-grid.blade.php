@@ -41,7 +41,7 @@
             :sku="$product->sku"
             :title="$product->name"
             :price="'Rp ' . number_format((float)$price, 0, ',', '.')"
-            :image="$image"
+            :image="asset('storage/'.$image)"
             :rating="$rating"
             :key="$product->id"
         />
