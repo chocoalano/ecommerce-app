@@ -12,6 +12,9 @@ class PageController extends Controller
      */
     public function show(Page $page)
     {
+        // Eager load relationships, misal: 'author', 'comments'
+        $page->load(['pageContents']); // Ganti dengan relasi yang kamu butuhkan
+
         // Check if page is active
         if (!$page->is_active) {
             abort(404);

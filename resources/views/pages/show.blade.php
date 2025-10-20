@@ -44,13 +44,29 @@
     </div>
 
     <!-- Content Section -->
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-10/12 mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="p-8 md:p-12">
                 <!-- Page Content -->
-                <div class="prose prose-lg max-w-none">
-                    @if($page->content)
-                        {!! $page->content !!}
+                <div class="prose prose- max-w-none">
+                    @if($page->pageContents && is_array($page->pageContents->content))
+                        @foreach($page->pageContents->content as $block)
+                            @if($block['type'] === 'heading')
+                                @php $level = $block['data']['level'] ?? 'h2'; @endphp
+                                <{{ $level }} class="font-bold mt-8 mb-2">
+                                    {{ $block['data']['content'] ?? '' }}
+                                </{{ $level }}>
+                            @elseif($block['type'] === 'paragraph')
+                                <p class="mb-4">{{ $block['data']['content'] ?? '' }}</p>
+                            @elseif($block['type'] === 'image')
+                                <figure class="my-6">
+                                    <img src="{{ asset('storage/'.$block['data']['url'] ?? '') }}" alt="{{ $block['data']['alt'] ?? '' }}" class="rounded-xl mx-auto max-h-96 object-contain" loading="lazy" />
+                                    @if(!empty($block['data']['alt']))
+                                        <figcaption class="text-center text-xs text-gray-500 mt-2">{{ $block['data']['alt'] }}</figcaption>
+                                    @endif
+                                </figure>
+                            @endif
+                        @endforeach
                     @else
                         <p class="text-gray-600">Konten sedang dalam proses pengembangan.</p>
                     @endif

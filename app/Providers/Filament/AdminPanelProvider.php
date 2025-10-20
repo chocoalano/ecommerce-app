@@ -47,6 +47,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make()
+                    ->label('Pengaturan Website')
+                    ->icon('heroicon-o-server-stack')
+                    ->collapsible(true),
+                NavigationGroup::make()
                     ->label('Master Data')
                     ->icon('heroicon-o-server-stack')
                     ->collapsible(true),

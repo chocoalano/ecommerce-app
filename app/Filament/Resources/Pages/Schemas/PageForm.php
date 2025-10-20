@@ -2,11 +2,15 @@
 
 namespace App\Filament\Resources\Pages\Schemas;
 
+use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\Builder\Block;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class PageForm
@@ -25,13 +29,52 @@ class PageForm
                     ->required()
                     ->helperText('Slug adalah bagian dari URL yang unik. Gunakan huruf kecil, tanpa spasi, dan pisahkan kata dengan tanda hubung (-)'),
 
-                RichEditor::make('content')
-                    ->label('Isi Konten')
-                    ->fileAttachmentsAcceptedFileTypes(['image/png', 'image/jpeg'])
-                    ->fileAttachmentsMaxSize(5120)
+                Section::make('Konten Halaman')
                     ->columnSpanFull()
-                    ->helperText('Tulis konten utama halaman di sini. Anda dapat menggunakan format teks, daftar, dan menyisipkan gambar (maks. 5MB).')
-                    ->extraInputAttributes(['style' => 'min-height: 50rem; max-height: 100vh; overflow-y: auto;']),
+                    ->relationship('pageContents')
+                    ->schema([
+                        Builder::make('content')
+                        ->label('Konten halaman')
+                        ->blocks([
+                            Block::make('heading')
+                                ->schema([
+                                    TextInput::make('content')
+                                        ->label('Heading')
+                                        ->required(),
+                                    Select::make('level')
+                                        ->options([
+                                            'h1' => 'Heading 1',
+                                            'h2' => 'Heading 2',
+                                            'h3' => 'Heading 3',
+                                            'h4' => 'Heading 4',
+                                            'h5' => 'Heading 5',
+                                            'h6' => 'Heading 6',
+                                        ])
+                                        ->required(),
+                                ])
+                                ->columns(2),
+                            Block::make('paragraph')
+                                ->schema([
+                                    Textarea::make('content')
+                                        ->label('Paragraph')
+                                        ->rows(5)
+                                        ->required(),
+                                ]),
+                            Block::make('image')
+                                ->schema([
+                                    FileUpload::make('url')
+                                        ->label('Image')
+                                        ->acceptedFileTypes(['image/svg+xml'])
+                                        ->disk('public')
+                                        ->directory('images/pages')
+                                        ->image()
+                                        ->required(),
+                                    TextInput::make('alt')
+                                        ->label('Alt text')
+                                        ->required(),
+                                ]),
+                            ]),
+                        ]),
 
                 Textarea::make('excerpt')
                     ->label('Ringkasan Singkat')

@@ -67,6 +67,12 @@ class Page extends Model
         return $query->orderBy('sort_order')->orderBy('title');
     }
 
+    // Relationships
+    public function pageContents()
+    {
+        return $this->hasOne(PageContent::class);
+    }
+
     // Helper methods
     public function getRouteKeyName()
     {

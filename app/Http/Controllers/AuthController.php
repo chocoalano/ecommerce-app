@@ -356,4 +356,11 @@ class AuthController extends Controller
 
         return back()->with('success', 'Order berhasil dibatalkan.');
     }
+
+    public function setting(Order $order)
+    {
+        $customer = Auth::guard('customer')->user();
+
+        return view('pages.auth.account-setting', compact('customer'));
+    }
 }

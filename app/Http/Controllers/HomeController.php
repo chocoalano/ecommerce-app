@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\NewsletterSubscriber;
 use App\Models\Product\Category;
 use App\Models\Product\Product;
 use App\Models\Promo\Promotion;
 use App\Services\PromotionService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
@@ -124,5 +126,14 @@ class HomeController extends Controller
                     ];
                 })
                 ->toArray();
+    }
+
+    public function newsletter(Request $request)
+    {
+        $validate = $request->validate([
+            'email' => 'required|email',
+        ]);
+        NewsletterSubscriber::create($validate);
+        return redirect()->back()->with('success', 'Berhasil berlangganan newsletter!');
     }
 }
