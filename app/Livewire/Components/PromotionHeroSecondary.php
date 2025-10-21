@@ -56,7 +56,7 @@ class PromotionHeroSecondary extends Component
         });
 
         // Mapping field + fallback
-        $title = data_get($promo, 'title') ?? 'Aksesoris Ponsel';
+        $title = data_get($promo, 'name') ?? 'Aksesoris Ponsel';
         $desc  = data_get($promo, 'description') ?? 'Temukan aksesoris terbaik untuk melengkapi pengalaman ponsel Anda. Dari casing hingga power bank—semuanya ada.';
         $badge = data_get($promo, 'badge') ?? 'Promo';
         $slug  = data_get($promo, 'slug');
