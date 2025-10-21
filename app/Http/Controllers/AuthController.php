@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrderProduct\Order;
+use App\Models\OrderProduct\OrderReturn;
+use App\Models\Product\Wishlist;
+use App\Models\Product\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -141,7 +144,68 @@ class AuthController extends Controller
      */
     public function showProfile(Request $request)
     {
-        return view('pages.auth.profile');
+        $customer = Auth::guard('customer')->user();
+
+        $breadcrumbs = [
+            ['label' => 'Beranda', 'href' => route('home')],
+            ['label' => 'Profil', 'href' => route('auth.profile')],
+            ['label' => 'Akun', 'href' => null],
+        ];
+
+        if (!$customer) {
+            $overviewStats = [];
+            $statusMap = [];
+            $orders = [];
+            $phoneCountries = [];
+        } else {
+            $ordersCount = Order::where('customer_id', $customer->id)->count();
+            $reviewsCount = ProductReview::where('customer_id', $customer->id)->count();
+            $wishlistModel = Wishlist::where('customer_id', $customer->id)->first();
+            $wishlistCount = $wishlistModel ? $wishlistModel->items()->count() : 0;
+            $returnsCount = OrderReturn::whereHas('order', fn($q) => $q->where('customer_id', $customer->id))->count();
+
+            $overviewStats = [
+                ['icon' => 'truck', 'label' => 'Pesanan', 'value' => (string)$ordersCount, 'delta' => null, 'delta_bg' => 'bg-green-100', 'delta_text' => 'text-green-800', 'note' => 'Pesanan terakhir'],
+                ['icon' => 'star', 'label' => 'Ulasan', 'value' => (string)$reviewsCount, 'delta' => null, 'delta_bg' => 'bg-green-100', 'delta_text' => 'text-green-800', 'note' => 'Ulasan Anda'],
+                ['icon' => 'heart', 'label' => 'Produk Favorit', 'value' => (string)$wishlistCount, 'delta' => null, 'delta_bg' => 'bg-red-100', 'delta_text' => 'text-red-800', 'note' => 'Di wishlist'],
+                ['icon' => 'return', 'label' => 'Retur Produk', 'value' => (string)$returnsCount, 'delta' => null, 'delta_bg' => 'bg-green-100', 'delta_text' => 'text-green-800', 'note' => 'Permintaan retur'],
+            ];
+
+            $statusMap = [
+                'in_transit' => ['label' => 'Dalam pengiriman', 'badge' => 'bg-yellow-100 text-yellow-800', 'icon' => 'truck-badge'],
+                'cancelled'  => ['label' => 'Dibatalkan', 'badge' => 'bg-red-100 text-red-800', 'icon' => 'x'],
+                'completed'  => ['label' => 'Selesai', 'badge' => 'bg-green-100 text-green-800', 'icon' => 'check'],
+            ];
+
+            $ordersRaw = Order::where('customer_id', $customer->id)->latest('placed_at')->take(4)->get();
+            $orders = $ordersRaw->map(function ($o) {
+                $statusKey = match ($o->status) {
+                    Order::ST_SHIPPED, Order::ST_PROCESS => 'in_transit',
+                    Order::ST_CANCELED => 'cancelled',
+                    Order::ST_COMPLETED => 'completed',
+                    default => 'completed',
+                };
+
+                return [
+                    'id' => $o->order_no,
+                    'date' => $o->placed_at ? $o->placed_at->format('d.m.Y') : ($o->created_at?->format('d.m.Y') ?? ''),
+                    'price' => 'Rp ' . number_format($o->grand_total ?? 0, 0, ',', '.'),
+                    'status_key' => $statusKey,
+                    'menu_id' => $o->id,
+                    'has_cancel' => $o->status !== Order::ST_CANCELED,
+                ];
+            })->toArray();
+
+            $phoneCountries = [
+                ['label' => 'United States (+1)', 'code' => '+1',  'flag' => 'us'],
+                ['label' => 'United Kingdom (+44)', 'code' => '+44', 'flag' => 'uk'],
+                ['label' => 'Australia (+61)', 'code' => '+61', 'flag' => 'au'],
+                ['label' => 'Germany (+49)', 'code' => '+49', 'flag' => 'de'],
+                ['label' => 'France (+33)', 'code' => '+33', 'flag' => 'fr'],
+            ];
+        }
+
+        return view('pages.auth.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'statusMap', 'orders', 'phoneCountries'));
     }
 
     // public function register_submit(Request $request) { ... } // Tambahkan logika registrasi di sini

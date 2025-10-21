@@ -8,7 +8,6 @@ use Illuminate\Notifications\Notifiable;
 
 class Customer extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\Auth\CustomerFactory> */
     use HasFactory, Notifiable;
 
     protected $fillable = [

@@ -56,8 +56,6 @@ Route::middleware(['customer'])->group(function () {
         Route::get('/orders/{order}', [AuthController::class, 'orderDetail'])->name('order.detail');
         Route::post('/orders/{order}/cancel', [AuthController::class, 'cancelOrder'])->name('order.cancel');
 
-        Route::get('/setting', \App\Livewire\Page\AuthSetting::class)->name('setting');
-
         // Logout - Menggunakan POST, sangat disarankan untuk keamanan
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });

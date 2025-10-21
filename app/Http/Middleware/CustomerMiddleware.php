@@ -18,9 +18,9 @@ class CustomerMiddleware
     {
         // Pengecekan utama: Pastikan pengguna sudah login menggunakan guard 'customer'
         if (!Auth::guard('customer')->check()) {
-            // Jika belum login, arahkan ke halaman login
-            // Nama rute 'auth.login' merujuk pada kode yang ada di Canvas
-            return redirect()->route('auth.login')->with('error', 'Anda perlu login untuk mengakses halaman ini.');
+            return redirect()
+            ->route('filament.admin.auth.login')
+            ->with('error', 'Anda perlu login untuk mengakses halaman ini.');
         }
 
         // Jika sudah login sebagai customer, lanjutkan ke request yang diminta
