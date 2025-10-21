@@ -45,7 +45,7 @@
 
                     {{-- Gambar kategori --}}
                     <div class="w-full text-center aspect-square max-w-[200px] sm:max-w-[220px] overflow-hidden">
-                        <img src="{{ asset("storage/images/".$value->image) }}" alt="Kategori {{ $value->name }}" loading="lazy"
+                        <img src="{{ asset("storage/".$value->image) }}" alt="Kategori {{ $value->name }}" loading="lazy"
                             class="h-full w-full object-cover transition duration-500 ease-in-out group-hover:scale-110" />
                     </div>
 
