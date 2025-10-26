@@ -29,7 +29,7 @@
         <!-- Kolom Kanan: Formulir Login -->
         <div
             class="flex flex-1 flex-col justify-center items-center px-4 py-12 sm:px-6 lg:flex-none lg:px-16 xl:px-20 bg-gray-50">
-            <div class="mx-auto item-center w-full max-w-md lg:w-96 p-8 bg-white rounded-xl border border-gray-100">
+            <div class="mx-auto item-center w-full max-w-md lg:w-96 p-8 bg-white rounded-xl">
 
                 <!-- Logo dan Header -->
                 <div class="mb-8">

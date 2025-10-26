@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Auth\Customer;
+use App\Observers\CustomerObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register model observers
+        Customer::observe(CustomerObserver::class);
 
     }
 }

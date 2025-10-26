@@ -150,28 +150,20 @@ class MidtransGateway
                 // For credit card transaction, we need to check whether transaction is challenge by FDS or not
                 if ($type == 'credit_card') {
                     if ($fraud == 'challenge') {
-                        // TODO set payment status in merchant's database to 'Challenge by FDS'
-                        // TODO merchant should decide whether this transaction is authorized or not in MAP
                         $status = 'challenge';
                     } else {
-                        // TODO set payment status in merchant's database to 'Success'
                         $status = 'success';
                     }
                 }
             } else if ($transaction == 'settlement') {
-                // TODO set payment status in merchant's database to 'Settlement'
                 $status = 'success';
             } else if ($transaction == 'pending') {
-                // TODO set payment status in merchant's database to 'Pending'
                 $status = 'pending';
             } else if ($transaction == 'deny') {
-                // TODO set payment status in merchant's database to 'Denied'
                 $status = 'failed';
             } else if ($transaction == 'expire') {
-                // TODO set payment status in merchant's database to 'expire'
                 $status = 'expired';
             } else if ($transaction == 'cancel') {
-                // TODO set payment status in merchant's database to 'Denied'
                 $status = 'cancelled';
             }
 
@@ -198,7 +190,10 @@ class MidtransGateway
     public function getTransactionStatus(string $orderId): array
     {
         try {
-            $status = \Midtrans\Transaction::status($orderId);
+            $raw = \Midtrans\Transaction::status($orderId);
+
+            // Normalize response to an object so properties can be accessed safely.
+            $status = is_array($raw) ? json_decode(json_encode($raw)) : $raw;
 
             return [
                 'order_id' => $status->order_id ?? null,
@@ -209,7 +204,7 @@ class MidtransGateway
                 'settlement_time' => $status->settlement_time ?? null,
                 'fraud_status' => $status->fraud_status ?? null,
                 'status_code' => $status->status_code ?? null,
-                'raw_response' => $status
+                'raw_response' => $raw
             ];
 
         } catch (\Exception $e) {

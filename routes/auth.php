@@ -1,0 +1,24 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+
+Route::middleware(['customer'])->group(function () {
+
+    // 1. Rute Profil, Keranjang, Pesanan & Logout
+    Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
+        // Halaman Profil (Dashboard Customer)
+        Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
+        Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
+        Route::get('/network-list', [AuthController::class, 'network_list'])->name('network-list');
+
+        Route::get('network', [AuthController::class,'network_info'])->name('network.info');
+        // Order History Routes
+        Route::get('/orders', [AuthController::class, 'orders'])->name('orders');
+        Route::get('/orders/{order}', [AuthController::class, 'orderDetail'])->name('order.detail');
+        Route::post('/orders/{order}/cancel', [AuthController::class, 'cancelOrder'])->name('order.cancel');
+
+        // Logout - Menggunakan POST, sangat disarankan untuk keamanan
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    });
+
+});

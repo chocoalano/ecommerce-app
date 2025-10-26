@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Auth\Customer;
 use App\Models\OrderProduct\Order;
 use App\Models\OrderProduct\OrderReturn;
 use App\Models\Product\Wishlist;
@@ -9,6 +10,9 @@ use App\Models\Product\ProductReview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -142,6 +146,105 @@ class AuthController extends Controller
     /**
      * Menampilkan halaman registrasi.
      */
+    public function register_submit(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:customers,email',
+            'password' => 'required|string|min:8|confirmed',
+            'terms' => 'accepted',
+            'newsletter' => 'nullable',
+            'referral_code' => 'nullable|string|max:100',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'terms.accepted' => 'Anda harus menyetujui syarat dan ketentuan.',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request, $validated) {
+                $refCode = trim($validated['referral_code'] ?? '');
+                $reference = null;
+                if (!empty($refCode)) {
+                    $reference = Customer::where('code', $refCode)->first();
+                }
+
+                // generate unique referral code for the new customer
+                do {
+                    $newCode = strtoupper(Str::random(8));
+                } while (Customer::where('code', $newCode)->exists());
+
+                // Create customer instance and save (avoid mass-assignment issues)
+                $customer = new Customer();
+                $customer->name = $validated['name'];
+                $customer->email = $validated['email'];
+                $customer->password = Hash::make($validated['password']);
+                $customer->is_active = true;
+                $customer->full_name = $validated['name'];
+                $customer->phone = 0;
+                $customer->save();
+
+                $customer->insertIntoClosureTable($reference);
+
+                if (!empty($validated['newsletter'])) {
+                    $customer->subscribers()->create([
+                        'email' => $customer->email,
+                        'subscribed_at' => now(),
+                        'ip_address' => $request->ip(),
+                    ]);
+                }
+
+                // Observer will dispatch job to sync closure table after commit
+
+                // Login otomatis setelah registrasi
+                Auth::guard('customer')->login($customer);
+                $request->session()->regenerate();
+
+                Log::info('Customer registered', [
+                    'customer_id' => $customer->id,
+                    'email' => $customer->email,
+                    'ip' => $request->ip(),
+                ]);
+
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Registrasi berhasil. Selamat datang!',
+                        'redirect' => route('auth.profile'),
+                        'user' => [
+                            'name' => $customer->name,
+                            'email' => $customer->email,
+                        ],
+                    ]);
+                }
+
+                return redirect()->route('auth.profile')->with('success', 'Registrasi berhasil. Selamat datang!');
+            });
+        } catch (\Exception $e) {
+            dd('error'. $e->getMessage());
+            Log::error('Register failed', ['error' => $e->getMessage()]);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat registrasi.',
+                    'errors' => ['general' => [$e->getMessage()]],
+                ], 500);
+            }
+
+            return back()->withInput($request->except('password', 'password_confirmation'))
+                         ->withErrors(['general' => 'Terjadi kesalahan saat registrasi. Silakan coba lagi.']);
+        }
+    }
+
+    /**
+     * Menampilkan halaman registrasi.
+     */
     public function showProfile(Request $request)
     {
         $customer = Auth::guard('customer')->user();
@@ -205,11 +308,114 @@ class AuthController extends Controller
             ];
         }
 
-        return view('pages.auth.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'statusMap', 'orders', 'phoneCountries'));
+        return view('pages.auth.profile.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'statusMap', 'orders', 'phoneCountries'));
     }
 
-    // public function register_submit(Request $request) { ... } // Tambahkan logika registrasi di sini
+    public function dashboard(){
+        $customer = Auth::guard('customer')->user();
 
+        $breadcrumbs = [
+            ['label' => 'Beranda', 'href' => route('home')],
+            ['label' => 'Profil', 'href' => route('auth.profile')],
+            ['label' => 'Dasbor', 'href' => null],
+        ];
+
+        $ordersCount = Order::where('customer_id', $customer->id)->count();
+        $reviewsCount = ProductReview::where('customer_id', $customer->id)->count();
+        $wishlistModel = Wishlist::where('customer_id', $customer->id)->first();
+        $wishlistCount = $wishlistModel ? $wishlistModel->items()->count() : 0;
+        $returnsCount = OrderReturn::whereHas('order', fn($q) => $q->where('customer_id', $customer->id))->count();
+
+        // Hitung member aktif/inaktif (asumsi tabel 'customers' dengan kolom 'is_active')
+        $activeMembersCount = Auth::guard('customer')->user()->activeMembers()->count();
+        $unactiveMembersCount = Auth::guard('customer')->user()->unactiveMembers()->count();
+
+        $overviewStats = [
+            ['icon' => 'users', 'label' => 'Member Aktif', 'value' => (string)$activeMembersCount, 'delta' => null, 'note' => 'Member aktif saat ini'],
+            ['icon' => 'users', 'label' => 'Member Tidak Aktif', 'value' => (string)$unactiveMembersCount, 'delta' => null, 'note' => 'Member tidak aktif saat ini'],
+            ['icon' => 'truck', 'label' => 'Pesanan', 'value' => (string)$ordersCount, 'delta' => null, 'note' => 'Pesanan terakhir'],
+            ['icon' => 'star', 'label' => 'Ulasan', 'value' => (string)$reviewsCount, 'delta' => null, 'note' => 'Ulasan Anda'],
+            ['icon' => 'heart', 'label' => 'Produk Favorit', 'value' => (string)$wishlistCount, 'delta' => null, 'note' => 'Di wishlist'],
+            ['icon' => 'return', 'label' => 'Retur Produk', 'value' => (string)$returnsCount, 'delta' => null, 'note' => 'Permintaan retur'],
+        ];
+        return view('pages.auth.profile.dashboard', compact('customer', 'breadcrumbs', 'overviewStats'));
+    }
+
+    public function network_list(Request $request) {
+        $customer = Auth::guard('customer')->user();
+
+        $breadcrumbs = [
+            ['label' => 'Beranda', 'href' => route('home')],
+            ['label' => 'Profil', 'href' => route('auth.profile')],
+            ['label' => 'Daftar Jaringan', 'href' => null],
+        ];
+        if ($request->has('members')) {
+            switch ($request->input('members')) {
+                case 'active':
+                    $title = 'Daftar Member Aktif';
+                    $members = $customer->activeMembers()->paginate(10);
+                    break;
+                case 'inactive':
+                    $title = 'Daftar Member Tidak Aktif';
+                    $members = $customer->inactiveMembers()->paginate(10);
+                    break;
+
+                default:
+                    $title = 'Daftar Member Aktif Untuk Prospek';
+                    $members = $customer->activeMembers()->paginate(10);
+                    break;
+            }
+        }
+        return view('pages.auth.profile.list_network', compact('customer', 'breadcrumbs', 'members', 'title'));
+    }
+
+    /**
+     * Memproses network binary.
+     */
+    public function network_info(Request $request)
+    {
+        $customer = Auth::guard('customer')->user();
+        $title = 'Jaringan Binary';
+        $breadcrumbs = [
+            ['label' => 'Beranda', 'href' => route('home')],
+            ['label' => 'Profil', 'href' => route('auth.profile')],
+            ['label' => 'Jaringan Binary', 'href' => null],
+        ];
+
+        // parameter: info => active | inactive | all (default active for prospects)
+        $info = $request->input('info', 'binary');
+        // allow caller to choose depth: 1 = direct children, 'all' = all descendants
+        $depthParam = $request->input('depth', 1);
+
+        // base query: find descendants of current customer
+        $query = $customer->descendants;
+        // apply status filter
+        if ($info === 'binary') {
+            $title = 'Jaringan Binary Member Aktif';
+        } elseif ($info === 'sponsorship') {
+            $title = 'Jaringan Sponsorship Member Tidak Aktif';
+        } else {
+            $title = 'Jaringan Binary Member Aktif Untuk Prospek';
+        }
+        // map to lightweight structure for view
+        $members = $query->map(function ($member) use ($customer) {
+            $born = $member->customer_created_at ? \Carbon\Carbon::parse($member->customer_created_at)->format('Y') : null;
+            $death = $member->customer_updated_at ? \Carbon\Carbon::parse($member->customer_updated_at)->format('Y') : null;
+
+            return [
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'is_active' => (bool) $member->is_active,
+                'born' => $born,
+                'death' => $death,
+                'depth' => $member->depth ?? null,
+                'parent' => $customer->name,
+            ];
+        })->toArray();
+        array_push($members, ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email, 'is_active' => (bool) $customer->is_active, 'born' => $customer->created_at ? $customer->created_at->format('Y') : null, 'death' => $customer->updated_at ? $customer->updated_at->format('Y') : null, 'depth' => 0, 'parent' => null]);
+        return view('pages.auth.profile.network_info', compact('customer', 'breadcrumbs', 'title', 'members'));
+    }
     /**
      * Memproses permintaan logout.
      */

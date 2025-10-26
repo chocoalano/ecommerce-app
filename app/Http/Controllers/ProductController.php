@@ -8,7 +8,6 @@ use App\Models\CartProduct\Cart;
 use App\Models\Product\Product;
 use App\Traits\HasBreadcrumb;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
@@ -266,9 +265,9 @@ class ProductController extends Controller
     /**
      * Get product pricing (API endpoint)
      */
-    public function pricing(Request $request, string $slug)
+    public function pricing(Request $request, string $sku)
     {
-        $product = $this->productService->getProductBySlug($slug);
+        $product = $this->productService->getProductBySku($sku);
 
         if (!$product) {
             return response()->json(['error' => 'Product not found'], 404);
@@ -399,7 +398,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return view('pages.products.search', compact(
+        return view('pages.products.filtered', compact(
             'products',
             'query',
             'categoryOptions',
@@ -425,7 +424,12 @@ class ProductController extends Controller
         $categoryOptions = $this->categoryService->getAllCategories();
         $breadcrumbItems = $this->buildCategoryBreadcrumb($category);
 
-        return view('pages.products.category', compact(
+        // Use the category view if it exists, otherwise fall back to the filtered products view
+        $viewName = view()->exists('pages.products.category')
+            ? 'pages.products.category'
+            : 'pages.products.filtered';
+
+        return view($viewName, compact(
             'products',
             'category',
             'categoryOptions',

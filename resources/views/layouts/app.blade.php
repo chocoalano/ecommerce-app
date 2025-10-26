@@ -4,6 +4,7 @@
 <head>
     @include('layouts.partials.head')
     @filamentStyles
+    @yield('css')
 </head>
 
 <body class="min-h-screen bg-white antialiased">
@@ -20,6 +21,7 @@
     {{-- Wajib: Livewire sebelum Flux --}}
     @stack('script')
     @filamentScripts
+    @yield('js')
 </body>
 
 </html>
