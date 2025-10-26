@@ -78,7 +78,7 @@
                             <div class="flex items-start gap-4 border-b border-gray-100 pb-5 last:border-b-0 last:pb-0">
                                 <div class="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
                                     @if($item->product && $item->product->image)
-                                        <img src="{{ $item->product->image?->url }}" alt="{{ $item->name }}" class="h-full w-full object-cover object-center">
+                                        <img src="{{ asset('storage/' . $item->product->image->url) }}" alt="{{ $item->name }}" class="h-full w-full object-cover object-center">
                                     @else
                                         <div class="flex h-full w-full items-center justify-center bg-gray-200">
                                             <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

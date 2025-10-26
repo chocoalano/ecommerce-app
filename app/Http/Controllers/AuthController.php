@@ -8,6 +8,7 @@ use App\Models\OrderProduct\OrderReturn;
 use App\Models\Product\Wishlist;
 use App\Models\Product\ProductReview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -227,7 +228,6 @@ class AuthController extends Controller
                 return redirect()->route('auth.profile')->with('success', 'Registrasi berhasil. Selamat datang!');
             });
         } catch (\Exception $e) {
-            dd('error'. $e->getMessage());
             Log::error('Register failed', ['error' => $e->getMessage()]);
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -329,7 +329,7 @@ class AuthController extends Controller
 
         // Hitung member aktif/inaktif (asumsi tabel 'customers' dengan kolom 'is_active')
         $activeMembersCount = Auth::guard('customer')->user()->activeMembers()->count();
-        $unactiveMembersCount = Auth::guard('customer')->user()->unactiveMembers()->count();
+        $unactiveMembersCount = Auth::guard('customer')->user()->inactiveMembers()->count();
 
         $overviewStats = [
             ['icon' => 'users', 'label' => 'Member Aktif', 'value' => (string)$activeMembersCount, 'delta' => null, 'note' => 'Member aktif saat ini'],
@@ -399,21 +399,38 @@ class AuthController extends Controller
             $title = 'Jaringan Binary Member Aktif Untuk Prospek';
         }
         // map to lightweight structure for view
-        $members = $query->map(function ($member) use ($customer) {
-            $born = $member->customer_created_at ? \Carbon\Carbon::parse($member->customer_created_at)->format('Y') : null;
-            $death = $member->customer_updated_at ? \Carbon\Carbon::parse($member->customer_updated_at)->format('Y') : null;
+        $members = collect($query)->flatMap(function ($member) use ($customer) {
 
-            return [
-                'id' => $member->id,
-                'name' => $member->name,
-                'email' => $member->email,
-                'is_active' => (bool) $member->is_active,
-                'born' => $born,
-                'death' => $death,
-                'depth' => $member->depth ?? null,
-                'parent' => $customer->name,
-            ];
-        })->toArray();
+            // Fungsi rekursif untuk memproses anak-anaknya
+            $processMember = function ($member, $parentName = null) use (&$processMember) {
+                $born = $member['created_at'] ? Carbon::parse($member['created_at'])->format('Y') : null;
+                $death = $member['updated_at'] ? Carbon::parse($member['updated_at'])->format('Y') : null;
+
+                // Data utama member
+                $data = [[
+                    'id' => $member['id'],
+                    'name' => $member['name'],
+                    'email' => $member['email'],
+                    'is_active' => (bool) ($member['is_active'] ?? false),
+                    'born' => $born,
+                    'death' => $death,
+                    'depth' => $member['depth'] ?? null,
+                    'parent' => $parentName,
+                ]];
+
+                // Jika ada anak-anak, proses mereka juga
+                if (!empty($member['children'])) {
+                    foreach ($member['children'] as $child) {
+                        $data = array_merge($data, $processMember($child, $member['name']));
+                    }
+                }
+
+                return $data;
+            };
+
+            // Proses root member
+            return $processMember($member, $customer->name);
+        })->values()->toArray();
         array_push($members, ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email, 'is_active' => (bool) $customer->is_active, 'born' => $customer->created_at ? $customer->created_at->format('Y') : null, 'death' => $customer->updated_at ? $customer->updated_at->format('Y') : null, 'depth' => 0, 'parent' => null]);
         return view('pages.auth.profile.network_info', compact('customer', 'breadcrumbs', 'title', 'members'));
     }

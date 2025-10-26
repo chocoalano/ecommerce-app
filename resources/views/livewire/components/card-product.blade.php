@@ -10,9 +10,12 @@
     <div class="relative p-4">
         {{-- Wishlist floating --}}
         <button type="button"
+            data-wishlist-toggle
+            data-product-id="{{ $data->id ?? null }}"
             class="absolute right-6 top-6 inline-flex size-8 items-center justify-center
                    rounded-full border border-gray-300 bg-white/70 backdrop-blur-sm z-10
-                   text-gray-400 hover:text-red-500 hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-300/50"
+                   text-gray-400 hover:text-red-500 hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-300/50
+                   transition-all duration-200"
             aria-label="Tambah ke Wishlist">
             {{-- SVG Heart Icon --}}
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -78,8 +81,6 @@
             const el = document.querySelector('meta[name="csrf-token"]');
             return el ? el.getAttribute('content') : '';
         }
-        if (window.__cartClickBound) return; // hindari double bind
-        window.__cartClickBound = true;
 
         async function postJSON(url, payload) {
             const res = await fetch(url, {
@@ -102,7 +103,6 @@
         }
 
         function normalizeDetail(data) {
-            // Backend kamu bisa kirim "count" atau "cart_count"
             const count =
                 typeof data.count === 'number' ? data.count :
                     (typeof data.cart_count === 'number' ? data.cart_count : undefined);
@@ -114,57 +114,176 @@
             };
         }
 
-        // Klik tombol "Tambah ke Keranjang" di card
+        // Update wishlist badge
+        function updateWishlistBadge(count) {
+            // Update badge di header jika ada
+            const badge = document.querySelector('[data-wishlist-badge]');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }
+
+        // Update wishlist button state
+        function updateWishlistButton(button, inWishlist) {
+            const svg = button.querySelector('svg');
+            if (inWishlist) {
+                button.classList.add('text-red-500', 'border-red-500');
+                button.classList.remove('text-gray-400', 'border-gray-300');
+                svg.setAttribute('fill', 'currentColor');
+            } else {
+                button.classList.remove('text-red-500', 'border-red-500');
+                button.classList.add('text-gray-400', 'border-gray-300');
+                svg.setAttribute('fill', 'none');
+            }
+        }
+
+        // Wishlist toggle handler
         document.addEventListener('click', async (e) => {
-            const btn = e.target.closest('[data-add-to-cart]');
+            const btn = e.target.closest('[data-wishlist-toggle]');
             if (!btn) return;
 
-            const url = btn.getAttribute('data-action');
-            const variantId = btn.getAttribute('data-variant-id');
-            const qty = parseInt(btn.getAttribute('data-qty') || '1', 10);
-            const currency = btn.getAttribute('data-currency') || 'IDR';
-            const metaStr = btn.getAttribute('data-meta');
-            const meta = metaStr ? JSON.parse(metaStr) : {};
-
-            if (!url || !variantId) {
-                console.warn('Add-to-cart: missing url/variant-id');
+            const productId = btn.getAttribute('data-product-id');
+            if (!productId) {
+                console.warn('Wishlist toggle: missing product-id');
                 return;
             }
 
-            // state loading
             btn.disabled = true;
 
             try {
-                const payload = {
-                    product_id: Number(variantId),
-                    quantity: Math.max(1, qty),
-                    currency,
-                    meta_json: meta,
-                };
-
-                const { ok, status, parsed } = await postJSON(url, payload);
+                const { ok, status, parsed } = await postJSON('{{ route('wishlist.toggle') }}', {
+                    product_id: Number(productId)
+                });
 
                 if (!ok) {
-                    // pesan error ramah (pakai helper kamu)
-                    console.log(ok, status, parsed);
-                    if (typeof showFriendlyError === 'function') {
-                        showFriendlyError({ status }, parsed.body);
-                    } else {
-                        showErrorToast('Gagal menambahkan ke keranjang.');
-                    }
                     if (status === 401) {
+                        // Redirect to login
                         window.location.href = "{{ route('auth.login') }}";
+                        return;
+                    }
+
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast(parsed.body?.message || 'Gagal mengupdate wishlist');
+                    } else {
+                        alert(parsed.body?.message || 'Gagal mengupdate wishlist');
                     }
                     return;
                 }
-                // Redirect ke halaman keranjang setelah sukses
 
-                window.location.href = "{{ route('cart.index') }}";
+                // Update button state
+                const data = parsed.body;
+                updateWishlistButton(btn, data.in_wishlist);
+                updateWishlistBadge(data.wishlist_count);
+
+                // Show success message
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(data.message);
+                } else {
+                    console.log(data.message);
+                }
+
             } catch (err) {
-                console.log(err.message, err.code);
-                showErrorToast('Gagal terhubung ke server. Periksa koneksi internet Anda.');
+                console.error('Wishlist error:', err);
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast('Gagal terhubung ke server');
+                }
             } finally {
                 btn.disabled = false;
+            }
+        });
+
+        // Add to cart handler
+        if (!window.__cartClickBound) {
+            window.__cartClickBound = true;
+
+            document.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-add-to-cart]');
+                if (!btn) return;
+
+                const url = btn.getAttribute('data-action');
+                const variantId = btn.getAttribute('data-variant-id');
+                const qty = parseInt(btn.getAttribute('data-qty') || '1', 10);
+                const currency = btn.getAttribute('data-currency') || 'IDR';
+                const metaStr = btn.getAttribute('data-meta');
+                const meta = metaStr ? JSON.parse(metaStr) : {};
+
+                if (!url || !variantId) {
+                    console.warn('Add-to-cart: missing url/variant-id');
+                    return;
+                }
+
+                btn.disabled = true;
+
+                try {
+                    const payload = {
+                        product_id: Number(variantId),
+                        quantity: Math.max(1, qty),
+                        currency,
+                        meta_json: meta,
+                    };
+
+                    const { ok, status, parsed } = await postJSON(url, payload);
+
+                    if (!ok) {
+                        console.log(ok, status, parsed);
+                        if (typeof showFriendlyError === 'function') {
+                            showFriendlyError({ status }, parsed.body);
+                        } else if (typeof showErrorToast === 'function') {
+                            showErrorToast('Gagal menambahkan ke keranjang.');
+                        }
+                        if (status === 401) {
+                            window.location.href = "{{ route('auth.login') }}";
+                        }
+                        return;
+                    }
+
+                    window.location.href = "{{ route('cart.index') }}";
+                } catch (err) {
+                    console.log(err.message, err.code);
+                    if (typeof showErrorToast === 'function') {
+                        showErrorToast('Gagal terhubung ke server. Periksa koneksi internet Anda.');
+                    }
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        }
+
+        // Load wishlist status on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const wishlistButtons = document.querySelectorAll('[data-wishlist-toggle]');
+            if (wishlistButtons.length === 0) return;
+
+            const productIds = Array.from(wishlistButtons)
+                .map(btn => btn.getAttribute('data-product-id'))
+                .filter(id => id);
+
+            if (productIds.length === 0) return;
+
+            try {
+                const { ok, parsed } = await postJSON('{{ route('wishlist.status') }}', {
+                    product_ids: productIds.map(Number)
+                });
+
+                if (ok && parsed.body) {
+                    const data = parsed.body;
+                    const inWishlistIds = data.items || [];
+
+                    // Update all buttons
+                    wishlistButtons.forEach(btn => {
+                        const productId = Number(btn.getAttribute('data-product-id'));
+                        const inWishlist = inWishlistIds.includes(productId);
+                        updateWishlistButton(btn, inWishlist);
+                    });
+
+                    // Update badge
+                    if (data.count !== undefined) {
+                        updateWishlistBadge(data.count);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load wishlist status:', err);
             }
         });
     })();

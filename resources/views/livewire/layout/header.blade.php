@@ -135,10 +135,11 @@
                 </button>
 
                 {{-- Wishlist --}}
-                <a href="#" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100" aria-label="Wishlist">
+                <a href="{{ route('wishlist.index') }}" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 relative" aria-label="Wishlist">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
+                    <span data-wishlist-badge class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full min-w-[1.25rem]" style="display: none;">0</span>
                 </a>
 
                 {{-- KERANJANG (Cart) --}}
@@ -423,3 +424,39 @@
     <div id="drawer-backdrop" class="bg-gray-900/50 dark:bg-gray-900/80 fixed inset-0 z-30 hidden"></div>
 
 </div> {{-- Penutup DIV root Livewire --}}
+
+<script>
+    // Load wishlist count on page load
+    (function() {
+        async function loadWishlistCount() {
+            try {
+                const response = await fetch('{{ route('wishlist.count') }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.querySelector('[data-wishlist-badge]');
+                    if (badge && typeof data.count === 'number') {
+                        badge.textContent = data.count;
+                        badge.style.display = data.count > 0 ? 'flex' : 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load wishlist count:', error);
+            }
+        }
+
+        // Load on page ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadWishlistCount);
+        } else {
+            loadWishlistCount();
+        }
+    })();
+</script>

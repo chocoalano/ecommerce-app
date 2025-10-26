@@ -58,3 +58,7 @@ require __DIR__.'/products.php';
 
 // Include Midtrans webhook routes
 require __DIR__.'/midtrans.php';
+
+// Include wishlist routes
+require __DIR__.'/wishlist.php';
+require __DIR__.'/article.php';

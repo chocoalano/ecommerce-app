@@ -145,6 +145,29 @@
                     @endforeach
                 </ul>
             </nav>
+            <nav aria-label="Bantuan" class="space-y-4 sm:col-span-1 lg:col-span-1">
+                <h4 class="text-sm font-extrabold uppercase tracking-wider text-gray-900">Artikel</h4>
+                <ul class="space-y-3 text-sm">
+                    @php
+                        $article = Cache::remember('footer_article_pages', 3600, function () {
+                            return \App\Models\Article::orderBy('published_at', 'desc')
+                                ->limit(5)
+                                ->get();
+                        });
+                    @endphp
+
+                    @if ($article->isNotEmpty())
+                        @foreach($article as $art)
+                            <li>
+                                <a href="{{ route('article.show', $art->slug) }}"
+                                    class="text-gray-600 hover:text-zinc-900 transition">
+                                    {{ $art->title }}
+                                </a>
+                            </li>
+                        @endforeach
+                    @endif
+                </ul>
+            </nav>
 
             @php
                 $socials = \App\Models\FooterSocial::where('is_active', true)->orderBy('id')->get();

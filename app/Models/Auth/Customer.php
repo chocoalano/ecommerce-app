@@ -149,11 +149,16 @@ class Customer extends Authenticatable
     /**
      * Get descendants from closure table (excluding self)
      */
+    /**
+     * Ambil semua turunan (downline) beserta jaringan di bawahnya secara rekursif.
+     * Menggunakan closure table untuk mengambil seluruh subtree.
+     */
     public function descendants()
     {
         return $this->belongsToMany(self::class, 'customer_networks', 'ancestor_id', 'descendant_id')
             ->wherePivot('depth', '>', 0)
-            ->orderBy('customer_networks.depth', 'asc');
+            ->orderBy('customer_networks.depth', 'asc')
+            ->with(['children.descendants']);
     }
 
     /**
