@@ -97,6 +97,16 @@
                                 <p id="email-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+                        {{-- Phone --}}
+                        <div>
+                            <label for="phone" class="block mb-2 text-sm font-medium text-gray-900">Nomor Telepon</label>
+                            <input type="text" id="phone" name="phone"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5"
+                                placeholder="Nomor Telepon" value="{{ old('phone') }}" required autocomplete="phone" aria-describedby="phone-error">
+                            @error('phone')
+                                <p id="phone-error" class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
 
                         {{-- Password --}}
                         <div class="space-y-2">

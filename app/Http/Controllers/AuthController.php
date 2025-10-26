@@ -151,6 +151,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:customers,email',
+            'phone' => 'required|string|max:255|unique:customers,phone',
             'password' => 'required|string|min:8|confirmed',
             'terms' => 'accepted',
             'newsletter' => 'nullable',
@@ -186,7 +187,7 @@ class AuthController extends Controller
                 $customer->password = Hash::make($validated['password']);
                 $customer->is_active = true;
                 $customer->full_name = $validated['name'];
-                $customer->phone = 0;
+                $customer->phone = $validated['phone'];
                 $customer->save();
 
                 $customer->insertIntoClosureTable($reference);
