@@ -181,6 +181,7 @@ class CartController extends Controller
             'qty' => (int) $request->qty,
             'row_total' => (int) $request->qty * $item->unit_price,
         ]);
+        $item->cart->recalcTotals();
 
         $item->cart->load('items'); // Ensure items are loaded for count
 

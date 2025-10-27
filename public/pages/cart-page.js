@@ -1,349 +1,523 @@
-/**
- * Helper: Mengkonversi angka menjadi format Rupiah.
- */
-function formatRupiah(number) {
-    if (isNaN(number)) number = 0;
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0
-    }).format(number);
-}
+/* global jQuery */
+(function ($, window, document) {
+  'use strict';
+  // ---------- Helpers ----------
+  const SEL = {
+    subtotal: '[data-cart-subtotal]',
+    discount: '[data-cart-discount]',
+    shipping: '[data-cart-shipping]',
+    tax: '[data-cart-tax]',
+    grand: '[data-cart-grand]',
+    itemCount: '[data-cart-item-count]',
+    itemRow: '[data-cart-item]',
+    itemRowTotal: (id) => `[data-item-row-total="${id}"]`,
+  };
 
-// ----------------------------------------------------------------------
-// 2. FUNGSI UTILITY UPDATE UI
-// ----------------------------------------------------------------------
+  const getCsrf = () => $('meta[name="csrf-token"]').attr('content') || '';
+  const isFn = (fn) => typeof fn === 'function';
+  const toast = (msg, type = 'info', opts = {}) => {
+    if (typeof window.showToast === 'function') window.showToast(msg, type, opts);
+    else console[(type === 'error' ? 'error' : 'log')](msg);
+  };
 
-/**
- * Memperbarui total harga di baris item yang diubah.
- */
-function updateItemRowTotal(itemId, newTotal) {
-    $(`[data-item-row-total="${itemId}"]`).text(formatRupiah(newTotal));
-}
+  const formatRupiah = (amount) =>
+    'Rp' + new Intl.NumberFormat('id-ID').format(Math.round(parseFloat(amount) || 0));
 
-/**
- * Memperbarui elemen-elemen di div Ringkasan Pesanan.
- */
-function updateOrderSummary(totals) {
-    if (!totals) {
-        console.error('Data totals tidak ditemukan.');
-        return;
-    }
+  const readNumberFromEl = ($el) => {
+    const t = ($el.text() || '').replace(/[^\d]/g, '');
+    return parseFloat(t) || 0;
+  };
 
-    // Pastikan nilai adalah numerik (untuk berjaga-jaga jika respons JSON adalah string)
-    const subtotal = parseFloat(totals.subtotal);
-    const discount = parseFloat(totals.discount);
-    const shipping = parseFloat(totals.shipping);
-    const tax = parseFloat(totals.tax);
-    const grand = parseFloat(totals.grand);
-    const item_count = parseInt(totals.item_count);
+  const animateNumber = ($el, to, formatter = (v) => v, duration = 500) => {
+    if (!$el || !$el.length) return;
+    const from = readNumberFromEl($el);
+    if (from === +to) return;
 
-    // 1. Update Item Count
-    $('[data-cart-item-count]').text(item_count);
+    // highlight bg
+    $el.css({ transition: 'background-color 0.3s ease' }).css('backgroundColor', '#fef3c7');
 
-    // 2. Update Subtotal
-    $('[data-cart-subtotal]').text(formatRupiah(subtotal));
+    $({ val: from }).animate(
+      { val: +to },
+      {
+        duration,
+        step(now) {
+          $el.text(formatter(now));
+        },
+        complete() {
+          // clear highlight
+          setTimeout(() => $el.css('backgroundColor', ''), 200);
+        },
+      }
+    );
+  };
 
-    // 3. Update Discount
-    const $discountRow = $('[data-cart-discount]').closest('.flex');
-    if (discount > 0) {
-        $discountRow.show();
-        $('[data-cart-discount]').text('-' + formatRupiah(discount));
+  const withScaleFlash = ($el, cb) => {
+    if (!$el || !$el.length) return;
+    $el.css({ transition: 'all 0.3s ease' }).css({ transform: 'scale(1.05)', color: '#059669' });
+    if (isFn(cb)) cb();
+    setTimeout(() => $el.css({ transform: '', color: '' }), 600);
+  };
+
+  const toggleRowByValue = ($el, value) => {
+    const $row = $el.closest('.flex');
+    if ($row.length) $row.toggle(!!(parseFloat(value) > 0));
+  };
+
+  const setBtnLoading = ($btn, isLoading = true) => {
+    if (!$btn || !$btn.length) return;
+    if (isLoading) {
+      $btn.prop('disabled', true).addClass('opacity-75 cursor-not-allowed');
+      if (!$btn.find('.loading-spinner').length) {
+        $btn.prepend(
+          $('<div/>', {
+            class:
+              'loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent border-solid rounded-full animate-spin mr-2',
+          })
+        );
+      }
     } else {
-        $discountRow.hide();
+      $btn.prop('disabled', false).removeClass('opacity-75 cursor-not-allowed');
+      $btn.find('.loading-spinner').remove();
     }
+  };
 
-    // 4. Update Tax
-    const $taxRow = $('[data-cart-tax]').closest('.flex');
-    if (tax > 0) {
-        $taxRow.show();
-        $('[data-cart-tax]').text(formatRupiah(tax));
-    } else {
-        $taxRow.hide();
+  const retry = async (operation, max = 3, delay = 1000) => {
+    let lastErr;
+    for (let i = 1; i <= max; i++) {
+      try {
+        return await operation();
+      } catch (e) {
+        lastErr = e;
+        if (i === max) break;
+        toast(`Mencoba ulang... (${i}/${max})`, 'info', { duration: 2000 });
+        // exponential backoff
+        /* eslint-disable no-await-in-loop */
+        await new Promise((r) => setTimeout(r, delay * i));
+        /* eslint-enable no-await-in-loop */
+      }
     }
+    throw lastErr;
+  };
 
-    // 5. Update Shipping Fee
-    $('[data-cart-shipping]').text(formatRupiah(shipping));
+  // ---------- Cart Manager ----------
+  const CartManager = {
+    formatRupiah,
 
-    // 6. Update Grand Total
-    $('[data-cart-grand]').text(formatRupiah(grand));
+    updateCartTotals(totals = {}) {
+      // Subtotal
+      if (totals.subtotal != null) {
+        const $el = $(SEL.subtotal);
+        animateNumber($el, totals.subtotal, formatRupiah);
+      }
 
-    // PENTING: Perbarui variabel global ongkir agar perhitungan selanjutnya benar
-    window.currentSubtotal = subtotal;
-    window.currentDiscount = discount;
-    window.currentTax = tax;
-}
+      // Discount
+      if (totals.discount != null) {
+        const $el = $(SEL.discount);
+        animateNumber(
+          $el,
+          totals.discount,
+          (v) => (parseFloat(v) > 0 ? '-' + formatRupiah(v) : formatRupiah(0))
+        );
+        toggleRowByValue($el, totals.discount);
+      }
 
+      // Shipping
+      if (totals.shipping != null) {
+        const $el = $(SEL.shipping);
+        animateNumber($el, totals.shipping, formatRupiah);
+      }
 
-// ----------------------------------------------------------------------
-// 3. FUNGSI AJAX CORE (Update Qty & Delete)
-// ----------------------------------------------------------------------
+      // Tax
+      if (totals.tax != null) {
+        const $el = $(SEL.tax);
+        animateNumber($el, totals.tax, formatRupiah);
+        toggleRowByValue($el, totals.tax);
+      }
 
-/**
- * Menangani pengiriman form AJAX menggunakan jQuery.ajax().
- */
-function submitCartForm($form, method, isDelete = false) {
-    const $itemElement = $form.closest('[data-cart-item]');
+      // Grand total
+      if (totals.grand != null) {
+        const $el = $(SEL.grand);
+        withScaleFlash($el, () => animateNumber($el, totals.grand, formatRupiah));
+      }
 
-    // Tampilkan loading visual pada item yang diproses
-    $itemElement.addClass('opacity-50 pointer-events-none');
+      // Item count
+      if (totals.item_count != null || totals.total_items != null) {
+        const count = totals.item_count ?? totals.total_items ?? 0;
+        const $el = $(SEL.itemCount);
+        $el
+          .css({ transition: 'transform 0.2s ease' })
+          .css('transform', 'scale(1.2)')
+          .text(count);
+        setTimeout(() => $el.css('transform', 'scale(1)'), 200);
+      }
+    },
 
-    $.ajax({
-        url: $form.attr('action'),
-        type: method,
-        data: $form.serialize(), // Mengambil data input, termasuk _token dan _method
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(data) {
-            if (data.success && data.totals) {
-                if (isDelete) {
-                    // Hapus elemen item dan cek keranjang kosong
-                    $itemElement.remove();
-                    if ($('.lg\\:col-span-2.space-y-6').children('[data-cart-item]').length === 0) {
-                         window.location.reload();
-                         return;
-                    }
-                } else if (data.item) {
-                    // Update Total Baris Item
-                    updateItemRowTotal(data.item.id, data.item.row_total);
-                }
+    updateItemRowTotal(itemId, newQty, unitPrice) {
+      const rowTotal = (parseFloat(newQty) || 0) * (parseFloat(unitPrice) || 0);
+      const $el = $(SEL.itemRowTotal(itemId));
+      if (!$el.length) return;
 
-                // Update Ringkasan dan panggil perhitungan ongkir ulang
-                updateOrderSummary(data.totals);
-                fetchShippingCosts(); // Hitung ulang ongkir (untuk memastikan total Grand benar)
-            } else {
-                alert(data.message || 'Gagal memproses permintaan.');
-            }
-        },
-        error: function(xhr) {
-            console.error('AJAX Error:', xhr.responseJSON || xhr.responseText);
-            const errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan server.';
-            alert(errorMessage);
-        },
-        complete: function() {
-            // Sembunyikan loading
-            $itemElement.removeClass('opacity-50 pointer-events-none');
-        }
-    });
-}
+      $el.css({ transition: 'all 0.3s ease', backgroundColor: '#dcfce7', transform: 'scale(1.05)' });
+      $el.text(formatRupiah(rowTotal));
+      setTimeout(() => $el.css({ backgroundColor: '', transform: 'scale(1)' }), 500);
+    },
 
-// ----------------------------------------------------------------------
-// 4. LOGIKA ONGKOS KIRIM (RAJAONGKIR)
-// ----------------------------------------------------------------------
+    removeItemRow(itemId) {
+      const $row = $(`${SEL.itemRow}[data-cart-item="${itemId}"]`);
+      if (!$row.length) return;
 
-/**
- * Mengambil daftar kota/kabupaten berdasarkan ID Provinsi yang dipilih.
- */
-function fetchCities() {
-    const provinceId = $('#shipping-address-province').val();
-    const $citySelect = $('#shipping-address-city');
-
-    $citySelect.html('<option value="" selected>Memuat Kota...</option>').prop('disabled', true);
-    $('#shipping-service').hide();
-    updateShippingFee(0);
-
-    if (!provinceId) {
-        $citySelect.html('<option value="" selected>Pilih Kota Tujuan</option>').prop('disabled', false);
-        return;
-    }
-
-    // Ganti URL ini dengan endpoint API Anda untuk mengambil kota
-    // Asumsi: /api/rajaongkir/cities/PROVINCE_ID
-    $.get(`/api/rajaongkir/cities/${provinceId}`)
-        .done(function(data) {
-            $citySelect.html('<option value="" selected>Pilih Kota Tujuan</option>');
-            if (data.success && data.cities) {
-                data.cities.forEach(city => {
-                    $citySelect.append(`<option value="${city.city_id}">${city.type} ${city.city_name}</option>`);
-                });
-            } else {
-                 $citySelect.html('<option value="" selected>Kota tidak ditemukan</option>');
-            }
-        })
-        .fail(function() {
-            $citySelect.html('<option value="" selected>Gagal memuat kota</option>');
-        })
-        .always(function() {
-            $citySelect.prop('disabled', false);
+      $row
+        .css('overflow', 'hidden')
+        .animate({ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginBottom: 0 }, 300, function () {
+          $(this).remove();
+          const remaining = $(SEL.itemRow).length;
+          if (remaining === 0) {
+            setTimeout(() => location.reload(), 500);
+          }
         });
-}
+    },
 
-/**
- * Mengambil biaya pengiriman (costs) dari RajaOngkir.
- */
-function fetchShippingCosts() {
-    const destinationCityId = $('#shipping-address-city').val();
-    const courierCode = $('#shipping-courier').val();
-    const $serviceSelect = $('#shipping-service');
+    setButtonLoading($button, isLoading = true) {
+      setBtnLoading($button, isLoading);
+    },
 
-    // Pastikan kota dan kurir sudah dipilih, dan berat cart tersedia
-    if (!destinationCityId || !courierCode || window.cartWeight <= 0) {
-         $serviceSelect.hide().html('<option value="" selected>Pilih Layanan</option>');
-         updateShippingFee(0);
-         return;
-    }
+    stepQty(id, delta) {
+      const $el = $('#' + id);
+      if (!$el.length) return;
 
-    $serviceSelect.show().html('<option value="" selected>Memuat Layanan...</option>').prop('disabled', true);
-    updateShippingFee(0);
+      const min = parseInt($el.attr('min') || '1', 10);
+      const max = parseInt($el.attr('max') || '9999', 10);
+      const cur = parseInt($el.val() || '1', 10);
+      const next = Math.max(min, Math.min(max, cur + delta));
 
-    // Ganti URL ini dengan endpoint API Anda untuk menghitung ongkir
-    // Asumsi: POST /api/rajaongkir/cost
-    $.ajax({
-        url: '/api/rajaongkir/cost',
-        type: 'POST',
-        dataType: 'json',
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        data: JSON.stringify({
-            // Asumsi origin_city_id disuntikkan dari PHP
-            origin: window.originCityId,
-            destination: destinationCityId,
-            weight: window.cartWeight,
-            courier: courierCode
-        }),
-        contentType: 'application/json', // Penting untuk kirim JSON
+      if (next !== cur) {
+        $el
+          .val(next)
+          .css({ transition: 'all 0.2s ease', backgroundColor: delta > 0 ? '#dcfce7' : '#fef2f2', transform: 'scale(1.05)' });
+        setTimeout(() => $el.css({ backgroundColor: '', transform: 'scale(1)' }), 200);
+        CartManager.handleQtyInputChange($el[0]); // trigger debounce update
+      }
+    },
 
-        success: function(response) {
-            $serviceSelect.html('<option value="" selected>Pilih Layanan</option>');
-            if (response.success && response.costs && response.costs.length > 0) {
-                response.costs.forEach(costGroup => {
-                    costGroup.costs.forEach(service => {
-                        const price = service.cost[0].value;
-                        const formattedPrice = formatRupiah(price);
+    async updateQtySubmit(form) {
+      const $form = $(form);
+      const $btn = $form.find('button[type="submit"]');
+      const $qty = $form.find('input[name="qty"]');
+      const itemId = ($form.attr('action') || '').split('/').pop();
 
-                        $serviceSelect.append(
-                            `<option value="${price}">
-                                ${service.service} (${service.description}) - ${formattedPrice} (${service.cost[0].etd} hari)
-                            </option>`
-                        );
-                    });
-                });
-            } else {
-                $serviceSelect.html('<option value="" selected>Tidak ada layanan tersedia.</option>');
-            }
-        },
-        error: function(xhr) {
-            console.error('Gagal mengambil biaya pengiriman:', xhr.responseText);
-            $serviceSelect.html('<option value="" selected>Gagal memuat layanan</option>');
-        },
-        complete: function() {
-            $serviceSelect.prop('disabled', false);
+      if (!$qty.length || !itemId) {
+        toast('Data item tidak valid.', 'error');
+        return false;
+      }
+
+      const newQty = parseInt($qty.val(), 10);
+      if (newQty < 1) {
+        toast('Kuantitas minimal adalah 1.', 'error');
+        $qty.val($qty.data('originalValue') || 1);
+        return false;
+      }
+
+      const originalQty = parseInt($qty.data('originalValue') ?? $qty.val(), 10);
+      if (newQty === originalQty) {
+        toast('Kuantitas tidak berubah.', 'info');
+        return false;
+      }
+
+      try {
+        CartManager.setButtonLoading($btn, true);
+        $qty.prop('disabled', true);
+
+        const doRequest = () =>
+          $.ajax({
+            url: $form.attr('action'),
+            method: 'POST', // Laravel-friendly with override
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': getCsrf(),
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            data: JSON.stringify({ qty: newQty, _method: 'PATCH' }),
+            dataType: 'json',
+          });
+
+        const data = await retry(doRequest, 3, 1000);
+
+        if (data?.totals) {
+          CartManager.updateCartTotals(data.totals);
+
+          // Unit price: prefer [data-unit-price], fallback parse "Rp ..."
+          const $row = $form.closest(SEL.itemRow);
+          let unitPrice = parseFloat($row.find('[data-unit-price]').data('unitPrice'));
+          if (!unitPrice || Number.isNaN(unitPrice)) {
+            const txt = ($row.find('.text-xs.text-gray-500').text() || '').match(/Rp([\d.,]+)/);
+            if (txt && txt[1]) unitPrice = parseFloat((txt[1] || '').replace(/[^\d]/g, '')) || 0;
+          }
+          if (unitPrice) CartManager.updateItemRowTotal(itemId, newQty, unitPrice);
+
+          $qty.data('originalValue', newQty);
         }
-    });
-}
 
-/**
- * Memperbarui Biaya Pengiriman dan Total Pembayaran.
- */
-function updateShippingFee(cost) {
-    window.selectedShippingCost = parseFloat(cost) || 0;
+        toast('Kuantitas berhasil diperbarui!', 'success');
 
-    const newGrandTotal = (window.currentSubtotal - window.currentDiscount) + window.selectedShippingCost + window.currentTax;
+        // CustomEvent broadcast (kompatibel dengan komponen lain)
+        window.dispatchEvent(
+          new CustomEvent('cart:updated', {
+            detail: { type: 'quantity_updated', itemId, newQty, totals: data?.totals },
+          })
+        );
+        window.dispatchEvent(
+          new CustomEvent('cartUpdated', {
+            detail: {
+              cartItemCount: data?.totals?.item_count ?? data?.totals?.total_items,
+              cartTotal: data?.totals?.grand ?? data?.totals?.grand_total,
+              type: 'quantity_updated',
+            },
+          })
+        );
+      } catch (err) {
+        console.error('Update quantity error:', err);
+        toast(err?.responseJSON?.message || err?.message || 'Kesalahan jaringan saat memperbarui kuantitas.', 'error');
+        $qty.val($qty.data('originalValue') ?? originalQty);
+      } finally {
+        CartManager.setButtonLoading($btn, false);
+        $qty.prop('disabled', false);
+      }
 
-    // Panggil fungsi global untuk memperbarui UI
-    updateOrderSummary({
-        subtotal: window.currentSubtotal,
-        discount: window.currentDiscount,
-        shipping: window.selectedShippingCost,
-        tax: window.currentTax,
-        grand: newGrandTotal,
-        item_count: $('[data-cart-item]').length
-    });
-}
+      return false;
+    },
 
-// ----------------------------------------------------------------------
-// 5. INISIALISASI DAN EVENT HANDLER UTAMA
-// ----------------------------------------------------------------------
+    async handleDeleteConfirm(event, form) {
+      event.preventDefault();
 
-$(document).ready(function() {
-    // -----------------------------------------------------
-    // A. Item Cart Handlers (Update Qty & Delete)
-    // -----------------------------------------------------
+      const $form = $(form);
+      const $btn = $form.find('button[type="submit"]');
+      const itemId = ($form.attr('action') || '').split('/').pop();
+      const $row = $form.closest(SEL.itemRow);
 
-    // Event Delegation: Tombol Plus/Minus Qty
-    $('.lg\\:col-span-2').on('click', 'button', function(e) {
-        // Cek apakah tombol ini adalah tombol Qty (+/-)
-        const $button = $(this);
-        const step = $button.text().trim() === '+' ? 1 : ($button.text().trim() === '−' ? -1 : 0);
+      if (!itemId) {
+        toast('Data item tidak valid.', 'error');
+        return false;
+      }
 
-        if (step !== 0) {
+      try {
+        CartManager.setButtonLoading($btn, true);
+        $row.css({ opacity: 0.5, pointerEvents: 'none' });
+
+        const doRequest = () =>
+          $.ajax({
+            url: $form.attr('action'),
+            method: 'POST', // Laravel-friendly with override
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': getCsrf(),
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            data: JSON.stringify({ _method: 'DELETE' }),
+            dataType: 'json',
+          });
+
+        const data = await retry(doRequest, 3, 1000);
+
+        // Broadcast dulu supaya header/cart-indicator ikut update
+        window.dispatchEvent(
+          new CustomEvent('cart:updated', { detail: { type: 'item_deleted', itemId, totals: data?.totals } })
+        );
+        window.dispatchEvent(
+          new CustomEvent('cartUpdated', {
+            detail: {
+              cartItemCount: data?.totals?.item_count ?? data?.totals?.total_items,
+              cartTotal: data?.totals?.grand ?? data?.totals?.grand_total,
+              type: 'item_deleted',
+            },
+          })
+        );
+
+        // Hapus row + cek empty
+        CartManager.removeItemRow(itemId);
+        toast('Item berhasil dihapus dari keranjang!', 'success');
+
+        setTimeout(() => {
+          if (!$(SEL.itemRow).length) {
+            toast('Keranjang Anda sekarang kosong.', 'info');
+            setTimeout(() => location.reload(), 1500);
+          }
+        }, 500);
+      } catch (err) {
+        console.error('Delete item error:', err);
+        toast(err?.responseJSON?.message || err?.message || 'Kesalahan jaringan saat menghapus item.', 'error');
+        $row.css({ opacity: 1, pointerEvents: 'auto' });
+        CartManager.setButtonLoading($btn, false);
+      }
+
+      return false;
+    },
+
+    // Debounced autosave untuk input qty
+    handleQtyInputChange(input) {
+      const $input = $(input);
+      if (!$input.data('originalValue')) $input.data('originalValue', $input.val());
+
+      // tombol indikasi "Menyimpan..."
+      const $form = $input.closest('form');
+      const $btn = $form.find('button[type="submit"]');
+      if ($btn.length) {
+        $btn.text('Menyimpan...').prop('disabled', true).addClass('opacity-75');
+      }
+
+      // gunakan timer per-input (disimpan di $.data)
+      const oldTimer = $input.data('timer');
+      if (oldTimer) clearTimeout(oldTimer);
+
+      const timer = setTimeout(() => {
+        const currentValue = parseInt($input.val(), 10);
+        const originalValue = parseInt($input.data('originalValue'), 10);
+
+        // reset state tombol
+        if ($btn.length) {
+          $btn.text('Perbarui').prop('disabled', false).removeClass('opacity-75');
+        }
+
+        // hanya update jika valid & berubah
+        if ($form.length && currentValue !== originalValue && currentValue >= 1) {
+          CartManager.updateQtySubmit($form[0]);
+        }
+      }, 1500);
+
+      $input.data('timer', timer);
+    },
+
+    init() {
+      // Inisialisasi nilai awal originalValue untuk semua qty
+      $('input[name="qty"]').each(function () {
+        $(this).data('originalValue', $(this).val());
+      });
+
+      // Event delegation untuk input qty
+      $(document)
+        .on('input', 'input[name="qty"]', function () {
+          CartManager.handleQtyInputChange(this);
+        })
+        .on('blur', 'input[name="qty"]', function () {
+          const $i = $(this);
+          const val = parseInt($i.val(), 10);
+          const min = parseInt($i.attr('min') || '1', 10);
+          const max = parseInt($i.attr('max') || '9999', 10);
+
+          if (val < min) {
+            $i.val(min);
+            toast(`Kuantitas minimal adalah ${min}`, 'warning');
+          } else if (val > max) {
+            $i.val(max);
+            toast(`Kuantitas maksimal adalah ${max}`, 'warning');
+          }
+        })
+        .on('keydown', 'input[name="qty"]', function (e) {
+          const $i = $(this);
+          if (e.key === 'Enter') {
             e.preventDefault();
-            const $form = $button.closest('form');
-            const $input = $form.find('input[name="qty"]');
+            const $form = $i.closest('form');
+            if ($form.length) CartManager.updateQtySubmit($form[0]);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            CartManager.stepQty(this.id, 1);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            CartManager.stepQty(this.id, -1);
+          }
+        });
 
-            let currentValue = parseInt($input.val(), 10) || 0;
-            let newValue = currentValue + step;
+      // Simpan unit price ke data-attr (aman bila server belum mengisi data-unit-price)
+      $(SEL.itemRow).each(function (idx) {
+        try {
+          const $row = $(this);
+          const $holder = $row.find('[data-unit-price]');
+          if ($holder.length && !$holder.data('unitPrice')) {
+            // fallback parse dari teks "Rp ..."
+            const txt = ($row.find('.text-xs.text-gray-500').text() || '').match(/Rp([\d.,]+)/);
+            if (txt && txt[1]) $holder.data('unitPrice', parseFloat(txt[1].replace(/[^\d]/g, '')) || 0);
+          }
+        } catch (e) {
+          console.warn(`Failed to parse unit price for item ${idx}:`, e);
+        }
+      });
 
-            const min = parseInt($input.attr('min'), 10) || 1;
-            const max = parseInt($input.attr('max'), 10) || Infinity;
+      // Shortcut: Ctrl/Cmd + U -> update semua qty (yang berubah)
+      $(document).on('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
+          e.preventDefault();
+          $('form[action*="cart/items/"]').each(function () {
+            CartManager.updateQtySubmit(this);
+          });
+          toast('Memperbarui semua kuantitas...', 'info');
+        }
+      });
 
-            newValue = Math.max(min, Math.min(max, newValue));
+      // Network status
+      let offlineToastShown = false;
+      $(window)
+        .on('online', function () {
+          offlineToastShown = false;
+          toast('Koneksi internet tersambung kembali.', 'success');
+        })
+        .on('offline', function () {
+          if (!offlineToastShown) {
+            toast('Koneksi internet terputus. Perubahan akan disimpan saat kembali online.', 'warning', { duration: 0 });
+            offlineToastShown = true;
+          }
+        });
 
-            if (newValue !== currentValue) {
-                $input.val(newValue);
-                // Langsung submit form AJAX
-                submitCartForm($form, 'PATCH', false);
+      // Periodic (visible only)
+      let syncInterval = null;
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          syncInterval = setInterval(() => {
+            const pending = $(`${SEL.itemRow} .opacity-75`);
+            if (!pending.length && navigator.onLine) {
+              console.log('🔄 Cart sync check');
+              // tempatkan optional sync call di sini bila dibutuhkan
             }
+          }, 30000);
+        } else if (syncInterval) {
+          clearInterval(syncInterval);
         }
-    });
+      });
 
-    // Event Delegation: Input Qty berubah (diketik)
-    $('.lg\\:col-span-2').on('change', 'input[name="qty"]', function() {
-        const $input = $(this);
-        const $form = $input.closest('form');
-
-        // Sanitasi nilai input
-        let currentValue = parseInt($input.val(), 10) || 1;
-        const min = parseInt($input.attr('min'), 10) || 1;
-        const max = parseInt($input.attr('max'), 10) || Infinity;
-
-        currentValue = Math.max(min, Math.min(max, currentValue));
-        $input.val(currentValue); // Setel nilai yang sudah divalidasi
-
-        submitCartForm($form, 'PATCH', false);
-    });
-
-    // Event Delegation: Hapus Item (Form submit)
-    $('.lg\\:col-span-2').on('submit', 'form[method="POST"]', function(e) {
-        const $form = $(this);
-        // Cek apakah form ini adalah form DELETE (mengandung input _method=DELETE)
-        if ($form.find('input[name="_method"][value="DELETE"]').length > 0) {
-             e.preventDefault();
-             if (confirm('Apakah Anda yakin ingin menghapus item ini dari keranjang?')) {
-                 submitCartForm($form, 'DELETE', true);
-             }
+      // Session pending info
+      try {
+        const saved = sessionStorage.getItem('cart_pending_updates');
+        if (saved) {
+          const items = JSON.parse(saved);
+          if (Array.isArray(items) && items.length > 0) {
+            toast(`Ada ${items.length} perubahan yang belum tersimpan.`, 'info');
+          }
         }
-        // Biarkan form update qty berjalan normal (tapi sudah di-handle via change/click di atas)
-    });
+      } catch {
+        sessionStorage.removeItem('cart_pending_updates');
+      }
+    },
+  };
 
-    // -----------------------------------------------------
-    // B. Ongkos Kirim Handlers
-    // -----------------------------------------------------
+  // ---------- Bootstrap ----------
+  $(function () {
+    CartManager.init();
+  });
 
-    // 1. Provinsi berubah -> Muat Kota
-    $('#shipping-address-province').on('change', function() {
-        fetchCities();
-    });
+  // ---------- Backward compatibility (fungsi global yang sudah dipakai di view) ----------
+  window.CartManager = CartManager;
+  window.stepQty = (id, delta) => CartManager.stepQty(id, delta);
+  window.updateQtySubmit = (form) => CartManager.updateQtySubmit(form);
+  window.handleDeleteConfirm = (event, form) => CartManager.handleDeleteConfirm(event, form);
+  window.handleQtyInputChange = (input) => CartManager.handleQtyInputChange(input);
 
-    // 2. Kota berubah -> Cek dan Muat Biaya Kurir (hanya jika kurir sudah dipilih)
-    $('#shipping-address-city').on('change', function() {
-        if ($('#shipping-courier').val()) {
-            fetchShippingCosts();
-        } else {
-             $('#shipping-service').hide();
-             updateShippingFee(0);
-        }
-    });
-
-    // 3. Kurir berubah -> Muat Biaya Layanan
-    $('#shipping-courier').on('change', function() {
-        fetchShippingCosts();
-    });
-
-    // 4. Layanan berubah -> Update Biaya Pengiriman & Total
-    $('#shipping-service').on('change', function() {
-        updateShippingFee($(this).val());
-    });
-});
+  // Unhandled promise errors khusus cart
+  window.addEventListener('unhandledrejection', function (evt) {
+    const msg = evt?.reason?.message || '';
+    if (msg && msg.toLowerCase().includes('cart')) {
+      console.error('Unhandled cart error:', evt.reason);
+      toast('Terjadi kesalahan tidak terduga pada keranjang.', 'error');
+      evt.preventDefault?.();
+    }
+  });
+})(window.jQuery, window, document);

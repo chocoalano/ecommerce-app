@@ -96,7 +96,7 @@ class Cart extends Model
     /** Hitung ulang subtotal/discount/grand_total berdasarkan item */
     public function recalcTotals(): void
     {
-        $subBeforeDiscount = $this->items->sum(fn ($i) => $i->qty * (float) $i->price);
+        $subBeforeDiscount = $this->items->sum(fn ($i) => $i->qty * (float) $i->unit_price);
         $rowSum = $this->items->sum(fn ($i) => (float) $i->row_total);
 
         $this->update([

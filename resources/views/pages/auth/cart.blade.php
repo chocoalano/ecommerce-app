@@ -108,6 +108,11 @@
                                             onclick="stepQty('qty-{{ $item->id }}', 1)">
                                         &plus;
                                     </button>
+
+                                    <button type="submit"
+                                            class="ml-2 inline-flex items-center px-3 py-2 text-sm font-semibold text-white bg-zinc-900 rounded-lg hover:bg-zinc-700 focus:ring-4 focus:ring-zinc-300 transition">
+                                        Perbarui
+                                    </button>
                                 </form>
 
                                 {{-- Hapus --}}
@@ -135,27 +140,7 @@
             <div class="lg:col-span-1 mt-8 lg:mt-0">
                 <div class="sticky top-8 bg-gray-100 p-6 rounded-xl border border-gray-200 shadow-md">
                     <h3 class="text-xl font-bold text-gray-900 mb-4 pb-3 border-b border-gray-200">Ringkasan Pesanan</h3>
-                    <select id="shipping-address-province" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-zinc-500 dark:focus:border-zinc-500 mb-3">
-                        <option value="" selected>Pilih Alamat Tujuan Pengiriman</option>
-                        @foreach ($prov as $p => $v)
-                            <option value="{{ $v['id'] }}" data-prov-id="{{ $v['id'] }}">{{ $v['name'] }}</option>
-                        @endforeach
-                    </select>
-                    <select id="shipping-address-city" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-zinc-500 dark:focus:border-zinc-500 mb-3" url-fetch-shipping="{{ route('cart.index') }}">
-                        <option value="" selected>Pilih Alamat Kota Tujuan Pengiriman</option>
-                        @foreach ($city as $p => $v)
-                            <option value="{{ $v['id'] }}" data-prov-id="{{ $v['id'] }}">{{ $v['name'] }}</option>
-                        @endforeach
-                    </select>
-                    <select id="shipping-courier" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-zinc-500 dark:focus:border-zinc-500 mb-3" url-fetch-shipping="{{ route('cart.index') }}">
-                        <option value="" selected>Pilih Ekspedisi</option>
-                        @foreach (\App\Models\OrderProduct\Courier::where('is_active', true)->get() as $courier)
-                            <option value="{{ $courier->code }}">{{ $courier->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="shipping-service" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-zinc-500 dark:focus:border-zinc-500 mb-3" style="display:none">
-                        <option value="" selected>Pilih Layanan</option>
-                    </select>
+
                     <dl class="space-y-3 text-sm text-gray-700">
                         <div class="flex justify-between">
                             <dt>Subtotal (<span data-cart-item-count>{{ $cart?->total_items ?? $items->count() }}</span> Item)</dt>
@@ -201,28 +186,6 @@
     @endif
 </div>
 @endsection
-@section('js')
-<script>
-    // --- Variabel Global yang DISUNTIKKAN dari PHP ---
-    window.currentSubtotal = {{ $subtotal }};
-    window.currentDiscount = {{ $discount }};
-    window.currentTax = {{ $tax }};
-    window.selectedShippingCost = {{ $shippingFee }};
-    window.cartWeight = {{ $cart?->total_weight ?? 1 }}; // Pastikan ini adalah total berat (gram)
-    window.originCityId = 1; // Ganti dengan ID kota asal default Anda
-
-    // Perbaikan elemen HTML agar event delegation di JS bekerja
-    // Hapus inline event handler di semua elemen keranjang
-
-    // Form Update Qty: Hapus onsubmit="return updateQtySubmit(this);"
-    $('form[action*="cart/items"][method="POST"]').removeAttr('onsubmit');
-
-    // Tombol Qty: Hapus onclick="stepQty(...)"
-    $('button[onclick^="stepQty"]').removeAttr('onclick');
-
-    // Form Delete: Hapus onsubmit="return handleDeleteConfirm(event, this);"
-    $('form[action*="cart/items"][method="POST"]').has('input[name="_method"][value="DELETE"]').removeAttr('onsubmit');
-
-</script>
+@push('script')
 <script src="{{ asset('pages/cart-page.js') }}"></script>
-@endsection
+@endpush
