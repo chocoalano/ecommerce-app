@@ -102,13 +102,11 @@
                 <h4 class="text-sm font-extrabold uppercase tracking-wider text-gray-900">Perusahaan</h4>
                 <ul class="space-y-3 text-sm">
                     @php
-                        $companyPages = Cache::remember('footer_company_pages', 3600, function () {
-                            return \App\Models\Page::active()
+                        $companyPages = \App\Models\Page::active()
                                 ->footer()
                                 ->category('company')
                                 ->ordered()
                                 ->get();
-                        });
                     @endphp
 
                     @foreach($companyPages as $page)

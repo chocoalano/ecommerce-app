@@ -88,6 +88,7 @@ class CategoryResource extends Resource
                         // Simpan path gambar (string). Jika ingin upload, ganti ke FileUpload (disk public).
                         FileUpload::make('image')
                             ->label('Gambar')
+                            ->disk('public')
                             ->directory('images/category-products')
                             ->helperText('URL/Path gambar kategori. Disarankan rasio 1:1, ukuran ≥ 600px.')
                             ->required(true)

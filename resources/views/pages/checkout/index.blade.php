@@ -100,10 +100,6 @@
                     @php
                         // Load payment methods dari database atau hardcode
                         $methods = [
-                            ['code' => 'bank_transfer', 'name' => 'Bank Transfer (VA)', 'is_active' => true],
-                            ['code' => 'credit_card', 'name' => 'Kartu Kredit / Debit', 'is_active' => true],
-                            ['code' => 'e_wallet', 'name' => 'E-Wallet (GoPay/ShopeePay)', 'is_active' => true],
-                            ['code' => 'cod', 'name' => 'COD (Bayar di Tempat)', 'is_active' => true],
                             ['code' => 'midtrans', 'name' => 'Midtrans (Kartu Kredit / Debit)', 'is_active' => true],
                         ];
                         // Jika ada PaymentMethod model loaded: $methods = $paymentMethods ?? [];

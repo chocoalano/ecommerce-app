@@ -295,7 +295,7 @@ class Customer extends Authenticatable
      */
     public function getCartItemsCountAttribute(): int
     {
-        return $this->activeCart?->getTotalQtyAttribute() ?? 0;
+        return $this->activeCart?->getTotalItemsAttribute() ?? 0;
     }
 
     /**

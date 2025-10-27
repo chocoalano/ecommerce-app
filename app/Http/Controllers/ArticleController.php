@@ -16,16 +16,6 @@ class ArticleController extends Controller
             $query->where('title', 'like', '%' . $request->input('title') . '%');
         }
 
-        // Filter by category
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->input('category'));
-        }
-
-        // Filter by published status
-        if ($request->filled('published')) {
-            $query->where('published', $request->input('published'));
-        }
-
         $query->orderBy("created_at", "desc");
 
         if ($request->ajax()) {

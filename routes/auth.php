@@ -8,6 +8,7 @@ Route::middleware(['customer'])->group(function () {
     Route::group(['prefix' => 'auth', 'as' => 'auth.'], function () {
         // Halaman Profil (Dashboard Customer)
         Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
+        Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
         Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
         Route::get('/network-list', [AuthController::class, 'network_list'])->name('network-list');
 

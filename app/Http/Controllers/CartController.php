@@ -7,12 +7,13 @@ use App\Http\Requests\Cart\AddToCartRequest;
 use App\Models\CartProduct\Cart;
 use App\Models\CartProduct\CartItem;
 use App\Services\CartService;
+use App\Services\RajaOngkir;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // Ambil cart berdasar user login atau session id aktif
         $cart = Cart::with(['items.product'])->firstWhere([
@@ -21,7 +22,18 @@ class CartController extends Controller
             'session_id' => session()->getId(),
         ]);
 
-        return view('pages.auth.cart', compact('cart'));
+    $rajaOngkir = new RajaOngkir();
+    $provinceId = $request->input('province_id', null);
+    $prov = $rajaOngkir->provinces();
+    $city = $rajaOngkir->city($provinceId);
+    if ($request->ajax()) {
+        return response()->json([
+            'provinces' => $prov,
+            'cities' => $city,
+        ]);
+    }
+    // dd($city);
+    return view('pages.auth.cart', compact('cart', 'prov', 'city'));
     }
 
     /**

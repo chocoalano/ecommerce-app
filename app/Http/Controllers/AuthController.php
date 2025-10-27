@@ -312,6 +312,53 @@ class AuthController extends Controller
         return view('pages.auth.profile.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'statusMap', 'orders', 'phoneCountries'));
     }
 
+    public function updateProfile(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'nullable|string',
+            'full_name' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'nullable|string|min:8',
+            'phone' => 'required|string',
+
+            'address.label' => 'required|string',
+            'address.recipient_name' => 'required|string',
+            'address.phone' => 'required|string',
+            'address.line1' => 'required|string',
+            'address.line2' => 'nullable|string',
+            'address.city' => 'required|string',
+            'address.province' => 'required|string',
+            'address.postal_code' => 'required|string',
+            'address.country' => 'required|string',
+            'address.is_default' => 'nullable|boolean',
+        ]);
+        $customer = Auth::guard('customer')->user();
+
+        $customer->name = $data['name'];
+        $customer->full_name = $data['full_name'];
+        $customer->email = $data['email'];
+        $customer->password = Hash::make($data['password']);
+        $customer->phone = $data['phone'];
+        $customer->save();
+        $customer->addresses()->updateOrCreate(
+            ['is_default' => true],
+            [
+                'label' => $data['address']['label'],
+                'recipient_name' => $data['address']['recipient_name'],
+                'phone' => $data['address']['phone'],
+                'line1' => $data['address']['line1'],
+                'line2' => $data['address']['line2'] ?? null,
+                'city' => $data['address']['city'],
+                'province' => $data['address']['province'],
+                'postal_code' => $data['address']['postal_code'],
+                'country' => $data['address']['country'],
+                'is_default' => $data['address']['is_default'] ?? true,
+            ]
+        );
+
+        return redirect()->route('auth.profile')->with('success', 'Profil berhasil diperbarui.');
+    }
+
     public function dashboard(){
         $customer = Auth::guard('customer')->user();
 

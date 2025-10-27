@@ -48,7 +48,7 @@
                                                @endif
                                                class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition duration-150">
                                                 <div class="flex items-center">
-                                                    <img src="{{ asset('storage/images/' . ($category->image ?? 'default.png')) }}" alt="{{ $category->name }}" class="w-10 h-10 me-3 object-contain" />
+                                                    <img src="{{ asset('storage/' . ($category->image ?? 'default.png')) }}" alt="{{ $category->name }}" class="w-10 h-10 me-3 object-contain" />
                                                     <div>
                                                         <div class="font-medium text-sm">{{ $category->name }}</div>
                                                         @if(isset($category->description))
@@ -107,6 +107,11 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Link Artikel --}}
+                <a href="{{ route('article.index') }}" class="flex items-center text-sm font-semibold px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-150 border border-transparent hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200" wire:navigate aria-label="Kembali ke beranda">
+                    Artikel
+                </a>
             </div>
 
             {{-- TENGAH: SEARCH BOX (Tablet & Desktop) --}}

@@ -19,6 +19,7 @@
     @include('components.toast-notification')
 
     {{-- Wajib: Livewire sebelum Flux --}}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     @stack('script')
     @filamentScripts
     @yield('js')

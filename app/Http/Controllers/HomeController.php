@@ -73,22 +73,18 @@ class HomeController extends Controller
         ];
 
         // 5. Data Kategori dengan cache
-        $categoriesFirst = Cache::remember('categories:first', 300, function () {
-            return Category::query()
+        $categoriesFirst = Category::query()
                 ->where('is_active', true)
                 ->orderBy('id', 'asc')
                 ->limit(6)
                 ->get();
-        });
 
-        $categoriesSecond = Cache::remember('categories:second', 300, function () use ($categoriesFirst) {
-            return Category::query()
+        $categoriesSecond = Category::query()
                 ->where('is_active', true)
                 ->whereNotIn('id', $categoriesFirst->pluck('id'))
                 ->orderBy('id', 'desc')
                 ->limit(6)
                 ->get();
-        });
 
         return view('pages.home', compact(
             'heroData', 'p1Data', 'p2Data', 'recommendedProducts',
