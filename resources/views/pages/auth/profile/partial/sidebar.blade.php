@@ -38,10 +38,10 @@
                         'id' => 'dropdown-komisi',
                         'icon' => 'trophy',
                         'children' => [
-                            ['label' => 'Komisi Sponsor', 'href' => '#'],
-                            ['label' => 'Komisi Pairing', 'href' => '#'],
-                            ['label' => 'Komisi Matching', 'href' => '#'],
-                            ['label' => 'Reward', 'href' => '#'],
+                            ['label' => 'Komisi Sponsor', 'href' => route('auth.komisi-list', ['type' => 'sponsors'])],
+                            ['label' => 'Komisi Pairing', 'href' => route('auth.komisi-list', ['type' => 'pairings'])],
+                            ['label' => 'Komisi Matching', 'href' => route('auth.komisi-list', ['type' => 'matchings'])],
+                            ['label' => 'Reward', 'href' => route('auth.komisi-list', ['type' => 'rewards'])],
                         ],
                     ],
                     [
@@ -50,8 +50,8 @@
                         'id' => 'dropdown-ewallet',
                         'icon' => 'wallet',
                         'children' => [
-                            ['label' => 'Transaksi Ewallet', 'href' => '#'],
-                            ['label' => 'Penarikan Komisi', 'href' => '#'],
+                            ['label' => 'Transaksi Ewallet', 'href' => route('auth.ewallet', ['type'=>'transactions'])],
+                            ['label' => 'Penarikan Komisi', 'href' => route('auth.ewallet', ['type'=>'withdrawal'])],
                         ],
                     ],
                     [
@@ -60,9 +60,9 @@
                         'id' => 'dropdown-transaksi',
                         'icon' => 'cart',
                         'children' => [
-                            ['label' => 'Pending', 'href' => '#'],
-                            ['label' => 'Berbayar', 'href' => '#'],
-                            ['label' => 'Selesai', 'href' => '#'],
+                            ['label' => 'Pending', 'href' => route('auth.transaction-order', ['status'=>'pending'])],
+                            ['label' => 'Berbayar', 'href' => route('auth.transaction-order', ['status'=>'paid'])],
+                            ['label' => 'Selesai', 'href' => route('auth.transaction-order', ['status'=>'completed'])],
                         ],
                     ],
                 ];

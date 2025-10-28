@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\EwalletController;
+use App\Http\Controllers\Auth\KomisiController;
+use App\Http\Controllers\Auth\TransactionOrderController;
 use App\Http\Controllers\AuthController;
 
 Route::middleware(['customer'])->group(function () {
@@ -11,6 +14,9 @@ Route::middleware(['customer'])->group(function () {
         Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
         Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
         Route::get('/network-list', [AuthController::class, 'network_list'])->name('network-list');
+        Route::get('/komisi-list', [KomisiController::class, 'index'])->name('komisi-list');
+        Route::get('/ewallet', [EwalletController::class, 'index'])->name('ewallet');
+        Route::get('/transaction-order', [TransactionOrderController::class, 'index'])->name('transaction-order');
 
         Route::get('network', [AuthController::class,'network_info'])->name('network.info');
         // Order History Routes

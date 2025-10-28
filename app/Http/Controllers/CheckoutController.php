@@ -18,10 +18,8 @@ class CheckoutController extends Controller
     public function index(Request $request, CartService $cartService)
     {
         $cart = Cart::with(['items.product'])
-            ->when(Auth::id(), fn($q) => $q->where('customer_id', Auth::id()))
-            ->when(!Auth::id(), fn($q) => $q->where('session_id', $request->session()->getId()))
+            ->when(Auth::guard('customer')->id(), fn($q) => $q->where('customer_id', Auth::guard('customer')->id()))
             ->first();
-
         if (!$cart || $cart->items->isEmpty()) {
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -69,8 +67,8 @@ class CheckoutController extends Controller
         $validated = $validator->validated();
 
         $cart = Cart::with(['items.product'])
-            ->when(Auth::id(), fn($q) => $q->where('customer_id', Auth::id()))
-            ->when(!Auth::id(), fn($q) => $q->where('session_id', $request->session()->getId()))
+            ->when(Auth::guard('customer')->id(), fn($q) => $q->where('customer_id', Auth::guard('customer')->id()))
+            ->when(!Auth::guard('customer')->id(), fn($q) => $q->where('session_id', $request->session()->getId()))
             ->lockForUpdate()
             ->first();
 
@@ -90,7 +88,7 @@ class CheckoutController extends Controller
 
         // 1) Simpan alamat pengiriman (dan billing = sama, untuk sederhana)
         $shipping = CustomerAddress::create([
-            'customer_id'      => Auth::id(),
+            'customer_id'      => Auth::guard('customer')->id(),
             'first_name'       => $validated['first_name'],
             'last_name'        => $validated['last_name'],
             'phone'            => $validated['phone'],
@@ -109,7 +107,7 @@ class CheckoutController extends Controller
             /** @var Order $order */
             $order = Order::create([
                 'order_no'         => $orderNo,
-                'customer_id'      => Auth::id(),
+                'customer_id'      => Auth::guard('customer')->id(),
                 'currency'         => $cart->currency ?? 'IDR',
                 'status'           => 'pending',
                 'subtotal_amount'  => (float) $cart->subtotal_amount,

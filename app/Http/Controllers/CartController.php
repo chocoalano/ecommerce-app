@@ -22,10 +22,12 @@ class CartController extends Controller
             'session_id' => session()->getId(),
         ]);
 
-    $rajaOngkir = new RajaOngkir();
-    $provinceId = $request->input('province_id', null);
-    $prov = $rajaOngkir->provinces();
-    $city = $rajaOngkir->city($provinceId);
+    // $rajaOngkir = new RajaOngkir();
+    // $provinceId = $request->input('province_id', null);
+    // $prov = $rajaOngkir->provinces() ?? [];
+    // $city = $rajaOngkir->city($provinceId) ?? [];
+    $prov = [];
+    $city = [];
     if ($request->ajax()) {
         return response()->json([
             'provinces' => $prov,
@@ -45,15 +47,10 @@ class CartController extends Controller
             $userId = Auth::guard('customer')->id();
             $sessionId = session()->getId();
 
-            // Ensure we have either user ID or session ID
-            if (!$userId) {
-                throw new \Exception('No valid user or session identifier', 401);
-            }
-
-            // Get or create cart based on authentication status
+            // Get or create cart for user or guest
             $cart = Cart::firstOrCreate(
                 [
-                    'customer_id' => $userId,
+                    'customer_id' => $userId ?? null,
                     'session_id' => $userId ? null : $sessionId,
                 ],
                 [
@@ -66,6 +63,8 @@ class CartController extends Controller
             if ($cart->currency !== $currency) {
                 $cart->update(['currency' => $currency]);
             }
+
+
 
             // Add item to cart
             $svc->addItem(
@@ -95,8 +94,7 @@ class CartController extends Controller
                 'tax' => (float) $cart->tax_amount,
                 'grand' => (float) $cart->grand_total,
             ];
-
-            if ($request->wantsJson()) {
+            if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Produk berhasil ditambahkan ke keranjang!',
@@ -114,6 +112,7 @@ class CartController extends Controller
             return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
 
         } catch (\Exception $e) {
+            // Jangan dd($e), langsung handle error
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -121,7 +120,6 @@ class CartController extends Controller
                     'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan sistem.',
                 ], $e->getCode() ?: 500);
             }
-
             return redirect()->back()->with('error', 'Gagal menambahkan item ke keranjang.');
         }
     }
