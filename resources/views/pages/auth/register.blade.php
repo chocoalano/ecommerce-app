@@ -232,7 +232,7 @@
                             <label for="referral_code" class="block mb-2 text-sm font-medium text-gray-900">Kode Referal (opsional)</label>
                             <input type="text" id="referral_code" name="referral_code"
                                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-500 focus:border-zinc-500 block w-full p-2.5"
-                                placeholder="Kode Referal" value="{{ old('referral_code') }}" autocomplete="off">
+                                placeholder="Kode Referal" value="{{ $referralCode }}" autocomplete="off">
                             @error('referral_code')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror

@@ -8,7 +8,8 @@ export default defineConfig({
             input: [
                 'resources/css/filament/store/theme.css',
                 'resources/css/app.css',
-                'resources/js/app.js'
+                'resources/js/toast-manager.js',
+                'resources/js/app.js',
             ],
             refresh: true,
         }),

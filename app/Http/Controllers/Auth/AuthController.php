@@ -141,7 +141,11 @@ class AuthController extends Controller
      */
     public function showRegister(Request $request)
     {
-        return view('pages.auth.register');
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('auth.profile');
+        }
+        $referralCode = $request->input('ref', '');
+        return view('pages.auth.register', compact('referralCode'));
     }
 
     /**

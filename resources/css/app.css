@@ -39,3 +39,31 @@
 @import '../../vendor/filament/widgets/resources/css/index.css';
 
 @variant dark (&:where(.dark, .dark *));
+
+/* resources/css/custom-styles.css */
+
+/* Additional styles for better toast appearance */
+#toast-container .bg-white {
+    /* Menjaga styling blur untuk tampilan modern */
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Smooth hover transitions */
+#toast-container button:hover {
+    transform: scale(1.05);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+    #toast-container {
+        left: 1rem;
+        right: 1rem;
+        top: 1rem;
+    }
+
+    #toast-container>div {
+        max-width: none;
+        width: 100%;
+    }
+}

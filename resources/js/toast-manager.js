@@ -1,26 +1,31 @@
-{{-- Toast Notification Container --}}
-<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2">
-</div>
+// resources/js/toast-manager.js
 
-<script>
-// Toast Notification System
+// 1. Deklarasikan kelas ToastManager (sama)
 class ToastManager {
     constructor() {
         this.container = document.getElementById('toast-container');
         this.toastId = 0;
+
+        // Cek container saat konstruksi, tapi tidak fatal jika null/undefined
+        if (!this.container) {
+             console.error('Toast container element #toast-container not found! Toasts will not display.');
+        }
     }
 
     /**
      * Menampilkan notifikasi toast.
-     * @param {string} message - Isi pesan notifikasi.
-     * @param {string} type - Tipe notifikasi ('success', 'error', 'warning', 'info', 'default').
-     * @param {object} options - Opsi notifikasi (misalnya, duration).
      */
     show(message, type = 'default', options = {}) {
+        // Cek container saat dipanggil
+        if (!this.container) {
+            console.error('Toast container element is missing. Cannot show toast.');
+            return;
+        }
+
         const toast = this.createToast(message, type, options);
         this.container.appendChild(toast);
 
-        // Auto dismiss after specified duration
+        // ... (Logika dismiss dan animasi tetap sama) ...
         const duration = options.duration || 5000;
         if (duration > 0) {
             setTimeout(() => {
@@ -32,17 +37,17 @@ class ToastManager {
     }
 
     createToast(message, type, options) {
+        // ... (Logika pembuatan toast tetap sama) ...
         this.toastId++;
         const toastId = `toast-${this.toastId}`;
 
         const toast = document.createElement('div');
-        // Menghilangkan semua kelas dark:
+        toast.id = toastId;
         toast.className = 'flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out translate-x-full opacity-0';
         toast.setAttribute('role', 'alert');
 
         const config = this.getTypeConfig(type);
 
-        // Menghilangkan semua kelas dark: pada HTML internal
         toast.innerHTML = `
             <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 ${config.bgColor} ${config.textColor} rounded-lg">
                 ${config.icon}
@@ -50,8 +55,8 @@ class ToastManager {
             </div>
             <div class="ms-3 text-sm font-normal flex-1">${message}</div>
             <button type="button"
+                    data-toast-dismiss="${toastId}"
                     class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 transition-colors duration-200"
-                    onclick="toastManager.dismiss(document.getElementById('${toastId}'))"
                     aria-label="Close">
                 <span class="sr-only">Close</span>
                 <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -60,7 +65,12 @@ class ToastManager {
             </button>
         `;
 
-        // Animate in
+        const dismissButton = toast.querySelector('button[data-toast-dismiss]');
+        dismissButton.addEventListener('click', () => {
+            // Gunakan window.showToast() agar dismissal dapat diakses dari mana saja
+            this.dismiss(toast);
+        });
+
         setTimeout(() => {
             toast.classList.remove('translate-x-full', 'opacity-0');
             toast.classList.add('translate-x-0', 'opacity-100');
@@ -72,11 +82,9 @@ class ToastManager {
     dismiss(toast) {
         if (!toast) return;
 
-        // Animate out
         toast.classList.add('translate-x-full', 'opacity-0');
         toast.classList.remove('translate-x-0', 'opacity-100');
 
-        // Remove from DOM after animation
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);
@@ -84,8 +92,9 @@ class ToastManager {
         }, 300);
     }
 
+    // ... (Metode getTypeConfig dan Convenience methods tetap sama) ...
     getTypeConfig(type) {
-        // Menghilangkan properti darkBg dan darkText
+        // ... (seluruh kode getTypeConfig Anda) ...
         const configs = {
             success: {
                 bgColor: 'bg-green-100',
@@ -132,90 +141,41 @@ class ToastManager {
         return configs[type] || configs.default;
     }
 
-    // Convenience methods
-    success(message, options = {}) {
-        return this.show(message, 'success', options);
-    }
-
-    error(message, options = {}) {
-        return this.show(message, 'error', options);
-    }
-
-    warning(message, options = {}) {
-        return this.show(message, 'warning', options);
-    }
-
-    info(message, options = {}) {
-        return this.show(message, 'info', options);
-    }
+    success(message, options = {}) { return this.show(message, 'success', options); }
+    error(message, options = {}) { return this.show(message, 'error', options); }
+    warning(message, options = {}) { return this.show(message, 'warning', options); }
+    info(message, options = {}) { return this.show(message, 'info', options); }
 }
 
-// Initialize global toast manager
-let toastManager;
 
-document.addEventListener('DOMContentLoaded', function() {
-    toastManager = new ToastManager();
-});
+// 2. MODUL INITIATION & GLOBAL EXPOSURE (Perbaikan Lazy Initialization)
 
-// Global helper functions for backward compatibility
+// Hapus block document.addEventListener('DOMContentLoaded', ...)
+// dan inisialisasi di sini
+
+/**
+ * Fungsi utama untuk menampilkan toast.
+ * Menggunakan Lazy Initialization untuk memastikan ToastManager sudah ada saat dipanggil.
+ */
 function showToast(message, type = 'default', options = {}) {
-    if (typeof toastManager !== 'undefined') {
-        return toastManager.show(message, type, options);
+    // 1. Cek dan inisialisasi ToastManager jika belum ada
+    if (!window.toastManager) {
+        // Jika belum ada, buat instance baru. Ini mengamankan dari timing issue.
+        window.toastManager = new ToastManager();
+    }
+
+    // 2. Sekarang kita yakin window.toastManager sudah ada
+    if (window.toastManager && window.toastManager.container) {
+        return window.toastManager.show(message, type, options);
     } else {
-        // Fallback if toast manager not ready
-        console.log(`Toast [${type}]: ${message}`);
-        alert(`${type.toUpperCase()}: ${message}`);
+        // Fallback jika container tidak ditemukan (misalnya, HTML belum fully loaded)
+        console.warn(`Toast Manager failed to load container. Toast: [${type}]: ${message}`);
     }
 }
 
-function showSuccessToast(message, options = {}) {
-    return showToast(message, 'success', options);
-}
-
-function showErrorToast(message, options = {}) {
-    return showToast(message, 'error', options);
-}
-
-function showWarningToast(message, options = {}) {
-    return showToast(message, 'warning', options);
-}
-
-function showInfoToast(message, options = {}) {
-    return showToast(message, 'info', options);
-}
-</script>
-
-<style>
-/* Additional styles for better toast appearance */
-#toast-container .bg-white {
-    /* Menjaga styling blur untuk tampilan modern */
-    backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.95);
-}
-
-/* Hapus blok dark mode yang tidak terpakai
-#toast-container .dark\:bg-gray-800 {
-    backdrop-filter: blur(10px);
-    background-color: rgba(31, 41, 55, 0.95);
-}
-*/
-
-/* Smooth hover transitions */
-#toast-container button:hover {
-    transform: scale(1.05);
-}
-
-/* Mobile responsive adjustments */
-@media (max-width: 640px) {
-    #toast-container {
-        left: 1rem;
-        right: 1rem;
-        top: 1rem;
-    }
-
-    #toast-container > div {
-        max-width: none;
-        width: 100%;
-    }
-}
-</style>
+// 3. Mengekspos semua fungsi helper ke objek window
+window.showToast = showToast;
+window.showSuccessToast = (message, options = {}) => showToast(message, 'success', options);
+window.showErrorToast = (message, options = {}) => showToast(message, 'error', options);
+window.showWarningToast = (message, options = {}) => showToast(message, 'warning', options);
+window.showInfoToast = (message, options = {}) => showToast(message, 'info', options);
