@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\EwalletController;
 use App\Http\Controllers\Auth\KomisiController;
+use App\Http\Controllers\Auth\NetworkController;
 use App\Http\Controllers\Auth\TransactionOrderController;
 use App\Http\Controllers\Auth\AuthController;
 
@@ -19,7 +20,8 @@ Route::middleware(['customer'])->group(function () {
         Route::get('/ewallet', [EwalletController::class, 'index'])->name('ewallet');
         Route::get('/transaction-order', [TransactionOrderController::class, 'index'])->name('transaction-order');
 
-        Route::get('network', [AuthController::class,'network_info'])->name('network.info');
+        Route::get('network', [NetworkController::class,'index'])->name('network.binary');
+        Route::get('network/sponsorship', [NetworkController::class,'sponsorship'])->name('network.sponsorship');
         // Order History Routes
         Route::get('/orders', [AuthController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [AuthController::class, 'orderDetail'])->name('order.detail');

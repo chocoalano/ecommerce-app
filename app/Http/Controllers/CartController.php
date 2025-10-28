@@ -85,7 +85,7 @@ class CartController extends Controller
 
             // Muat relasi seperlunya (hemat kolom)
             $cart->load([
-                'items.product' => fn ($q) => $q->select('id', 'name', 'sku', 'primary_image_url', 'price'),
+                'items.product' => fn ($q) => $q->select('id', 'name', 'sku', 'base_price'),
             ]);
 
             // Hitung total qty item
@@ -104,7 +104,7 @@ class CartController extends Controller
                     'variant'    => (string) ($product->sku ?? null),
                     'qty'        => $qty,
                     'unit_price' => $unit,
-                    'image'      => $product->primary_image_url ?? null,
+                    'image'      => $product->primaryMedia ?? null,
                     'subtotal'   => $qty * $unit,
                 ];
             })->values();

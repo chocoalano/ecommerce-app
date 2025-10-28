@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-use Faker\Factory as Faker;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\Paginator;
 
@@ -76,7 +75,7 @@ class TransactionOrderController extends Controller
 
             default:
                 $title = 'Daftar Semua Order Produk';
-                $allData = $this->generateProductOrderData(); // Tampilkan semua order
+                $allData = []; // Tampilkan semua order
                 $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Semua Order', 'href' => null];
                 $type = 'All'; // Setel tipe default non-filter

@@ -34,8 +34,8 @@
                         'id' => 'dropdown-network',
                         'icon' => 'network',
                         'children' => [
-                            ['label' => 'Binary', 'href' => route('auth.network.info', ['info'=>'binary'])],
-                            ['label' => 'Sponsorship', 'href' => route('auth.network.info', ['info'=>'sponsorship'])],
+                            ['label' => 'Binary', 'href' => route('auth.network.binary')],
+                            ['label' => 'Sponsorship', 'href' => route('auth.network.sponsorship')],
                         ],
                     ],
                     [
