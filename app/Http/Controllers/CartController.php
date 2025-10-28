@@ -10,6 +10,7 @@ use App\Services\CartService;
 use App\Services\RajaOngkir;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class CartController extends Controller
 {
@@ -43,84 +44,110 @@ class CartController extends Controller
      */
     public function store(AddToCartRequest $request, CartService $svc)
     {
-        try {
-            $userId = Auth::guard('customer')->id();
-            $sessionId = session()->getId();
+        // === 401 jika belum login ===
+        if (! Auth::guard('customer')->check()) {
+            // Untuk fetch/AJAX atau permintaan JSON → balas JSON 401
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], Response::HTTP_UNAUTHORIZED);
+            }
 
-            // Get or create cart for user or guest
+            // Non-AJAX: abort 401 (bisa diganti redirect()->route('auth.login'))
+            abort(Response::HTTP_UNAUTHORIZED);
+        }
+
+        try {
+            $user = Auth::guard('customer')->user();
+
+            // Normalisasi currency
+            $currency = strtoupper($request->input('currency', 'IDR'));
+
+            // Cart hanya untuk user terautentikasi (guest tidak dibuat)
             $cart = Cart::firstOrCreate(
-                [
-                    'customer_id' => $userId ?? null,
-                    'session_id' => $userId ? null : $sessionId,
-                ],
-                [
-                    'currency' => strtoupper($request->input('currency', 'IDR')),
-                ]
+                ['customer_id' => $user->id],
+                ['currency' => $currency]
             );
 
-            // Update currency if different
-            $currency = strtoupper($request->input('currency', $cart->currency));
+            // Sinkronkan currency jika berubah
             if ($cart->currency !== $currency) {
                 $cart->update(['currency' => $currency]);
             }
 
-
-
-            // Add item to cart
+            // Tambahkan item
             $svc->addItem(
                 $cart,
-                (int) $request->product_id,
-                (int) $request->quantity,
+                (int) $request->input('product_id'),
+                max(1, (int) $request->input('quantity', 1)),
                 (array) $request->input('meta_json', [])
             );
 
-            // Prepare response data
-            $cart->load(['items.product']);
-            $itemCount = $cart->items()->sum('qty');
-
-            $items = $cart->items()->get()->map(fn ($item) => [
-                'id' => $item->id,
-                'name' => $item->product?->name ?? 'Item',
-                'variant' => $item->product?->sku,
-                'qty' => (int) $item->qty,
-                'unit_price' => (float) $item->unit_price,
-                'image' => $item->product?->primary_image_url,
+            // Muat relasi seperlunya (hemat kolom)
+            $cart->load([
+                'items.product' => fn ($q) => $q->select('id', 'name', 'sku', 'primary_image_url', 'price'),
             ]);
 
+            // Hitung total qty item
+            $itemCount = (int) $cart->items()->sum('qty');
+
+            // Bentuk daftar item untuk preview/response
+            $items = $cart->items->map(function ($item) {
+                $product = $item->product;
+                $unit = (float) $item->unit_price; // atau $product->price jika kebijakanmu begitu
+                $qty  = (int) $item->qty;
+
+                return [
+                    'id'         => (int) $item->id,
+                    'product_id' => (int) $item->product_id,
+                    'name'       => (string) ($product->name ?? 'Item'),
+                    'variant'    => (string) ($product->sku ?? null),
+                    'qty'        => $qty,
+                    'unit_price' => $unit,
+                    'image'      => $product->primary_image_url ?? null,
+                    'subtotal'   => $qty * $unit,
+                ];
+            })->values();
+
+            // Totals
             $totals = [
                 'subtotal' => (float) $cart->subtotal_amount,
                 'discount' => (float) $cart->discount_amount,
                 'shipping' => (float) $cart->shipping_amount,
-                'tax' => (float) $cart->tax_amount,
-                'grand' => (float) $cart->grand_total,
+                'tax'      => (float) $cart->tax_amount,
+                'grand'    => (float) $cart->grand_total,
             ];
-            if ($request->ajax()) {
+
+            // === JSON (AJAX/fetch) ===
+            if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Produk berhasil ditambahkan ke keranjang!',
+                    'success'    => true,
+                    'message'    => 'Produk berhasil ditambahkan ke keranjang!',
+                    // kunci yang kompatibel dengan normalizer front-end
+                    'cart_id'    => (int) $cart->id,
                     'cart_count' => $itemCount,
-                    'cart_items' => $items,
-                    'cart_totals' => $totals,
-                    'data' => [
-                        'cart_id' => $cart->id,
-                        'item_count' => $itemCount,
-                        'totals' => $totals,
-                    ],
-                ]);
+                    'count'      => $itemCount,
+                    'items'      => $items,   // front-end kamu menerima "items"
+                    'totals'     => $totals,  // front-end kamu menerima "totals"
+                ], Response::HTTP_OK);
             }
 
-            // return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
+            // === Non JSON (fallback) ===
+            return redirect()
+                ->route('cart.index')
+                ->with('success', 'Item ditambahkan ke keranjang.');
+        } catch (\Throwable $e) {
+            report($e);
 
-        } catch (\Exception $e) {
-            // Jangan dd($e), langsung handle error
-            if ($request->wantsJson()) {
+            if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal menambahkan produk ke keranjang.',
-                    'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan sistem.',
-                ], $e->getCode() ?: 500);
+                    'error'   => config('app.debug') ? $e->getMessage() : null,
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
-            return redirect()->back()->with('error', 'Gagal menambahkan item ke keranjang.');
+
+            return back()->with('error', 'Gagal menambahkan item ke keranjang.');
         }
     }
 
