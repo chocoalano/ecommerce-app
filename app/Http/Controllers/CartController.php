@@ -129,7 +129,7 @@ class CartController extends Controller
      */
     public function storeMany(AddManyToCartRequest $request, CartService $svc)
     {
-        $userId = $request->input('user_id') ?? Auth::id();
+        $userId = $request->input('user_id') ?? Auth::guard('customer')->id();
         $sessionId = $request->input('session_id') ?? session()->getId();
 
         $cart = Cart::firstOrCreate(
