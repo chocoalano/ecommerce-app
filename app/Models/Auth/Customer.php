@@ -295,7 +295,9 @@ class Customer extends Authenticatable
      */
     public function getCartItemsCountAttribute(): int
     {
-        return $this->activeCart?->getTotalItemsAttribute() ?? 0;
+        // Hitung total qty semua item di keranjang user
+        // Ganti dengan logika kamu sendiri bila perlu
+        return (int) ($this->cartItems()->sum('qty') ?? 0);
     }
 
     /**

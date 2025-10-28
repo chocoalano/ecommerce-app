@@ -30,34 +30,6 @@ class TransactionOrderController extends Controller
         );
     }
 
-    // --- Generator Data ---
-
-    /**
-     * Menghasilkan data dummy untuk Order Produk.
-     */
-    private function generateProductOrderData(): array
-    {
-        $faker = Faker::create('id_ID');
-        $data = [];
-        $jumlah_baris = 80;
-        // Status yang lebih relevan untuk Order Produk
-        $statuses = ['Pending Pembayaran', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan'];
-        $products = ['Paket Starter', 'Paket Premium', 'Upgrade Lisensi', 'Paket Reseller'];
-
-        for ($i = 1; $i <= $jumlah_baris; $i++) {
-            $data[] = [
-                'ID Order'      => 'ORD' . $faker->unique()->randomNumber(6),
-                'Tanggal'       => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d H:i'),
-                'Nama Produk'   => $faker->randomElement($products),
-                'Kuantitas'     => $faker->numberBetween(1, 5),
-                'Total (IDR)'   => $faker->numberBetween(1000000, 10000000), // Total Harga
-                'Status'        => $faker->randomElement($statuses),
-            ];
-        }
-        $faker->unique(true);
-        return $data;
-    }
-
     // --- Fungsi Controller Utama ---
 
     public function index(Request $request)
@@ -79,7 +51,7 @@ class TransactionOrderController extends Controller
         switch ($type) {
             case 'Pending':
                 $title = 'Daftar Order Pending Pembayaran';
-                $baseData = $this->generateProductOrderData();
+                $baseData = [];
                 $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Pending Pembayaran');
                 // Header disesuaikan untuk Order Produk
                 $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
@@ -89,14 +61,14 @@ class TransactionOrderController extends Controller
             case 'Berbayar':
                 $title = 'Daftar Order Diproses / Dikirim';
                 // Menggabungkan status Diproses dan Dikirim
-                $baseData = $this->generateProductOrderData();
+                $baseData = [];
                 $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Diproses' || $item['Status'] === 'Dikirim');
                 $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Order Diproses', 'href' => null];
                 break;
             case 'Selesai':
                 $title = 'Daftar Order Selesai';
-                $baseData = $this->generateProductOrderData();
+                $baseData = [];
                 $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Selesai');
                 $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Order Selesai', 'href' => null];

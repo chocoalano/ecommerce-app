@@ -148,12 +148,12 @@
                 </a>
 
                 {{-- KERANJANG (Cart) --}}
-                <a href="{{ route('cart.index') }}" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 relative" aria-label="Keranjang Belanja">
+                {{-- <a href="{{ route('cart.index') }}" class="p-2 text-gray-600 rounded-lg hover:bg-gray-100 relative" aria-label="Keranjang Belanja">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l3.5 7.5M16 16l-3 3-5-5M6 14a2 2 0 100 4 2 2 0 000-4zM16 14a2 2 0 100 4 2 2 0 000-4z"></path>
                     </svg>
-                    @livewire('components.cart-indicator')
-                </a>
+                </a> --}}
+                @livewire('components.cart-indicator')
 
                 {{-- Divider --}}
                 <div class="hidden md:block h-6 w-px bg-gray-300 mx-2"></div>

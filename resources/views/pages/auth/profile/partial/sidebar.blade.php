@@ -12,6 +12,12 @@
                         'icon' => 'chart',
                     ],
                     [
+                        'label' => 'Profil Saya',
+                        'type' => 'link',
+                        'href' => route('auth.profile'),
+                        'icon' => 'user',
+                    ],
+                    [
                         'label' => 'Member',
                         'type' => 'group',
                         'id' => 'dropdown-member',

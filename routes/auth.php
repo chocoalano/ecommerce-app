@@ -3,7 +3,7 @@
 use App\Http\Controllers\Auth\EwalletController;
 use App\Http\Controllers\Auth\KomisiController;
 use App\Http\Controllers\Auth\TransactionOrderController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\AuthController;
 
 Route::middleware(['customer'])->group(function () {
 
@@ -12,6 +12,7 @@ Route::middleware(['customer'])->group(function () {
         // Halaman Profil (Dashboard Customer)
         Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
         Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password.update');
         Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
         Route::get('/network-list', [AuthController::class, 'network_list'])->name('network-list');
         Route::get('/komisi-list', [KomisiController::class, 'index'])->name('komisi-list');

@@ -42,8 +42,7 @@ class Header extends Component
     public function render()
     {
         // Cache kategori untuk performa
-        $categories = Cache::remember('menu:categories:top-with-children', 600, function () {
-            return Category::query()
+        $categories = Category::query()
                 ->select(['id', 'slug', 'name', 'description', 'is_active', 'image'])
                 ->where('is_active', true)
                 ->whereNull('parent_id')
@@ -63,7 +62,6 @@ class Header extends Component
                         ]),
                     ];
                 });
-        });
         return view('livewire.layout.header', [
             'categories' => $categories,
             'user' => Auth::guard('customer')->user(),

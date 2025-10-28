@@ -109,7 +109,7 @@ class CartController extends Controller
                 ]);
             }
 
-            return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
+            // return redirect()->route('cart.index')->with('success', 'Item ditambahkan ke keranjang.');
 
         } catch (\Exception $e) {
             // Jangan dd($e), langsung handle error
@@ -163,7 +163,7 @@ class CartController extends Controller
             ]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Items ditambahkan.');
+        // return redirect()->route('cart.index')->with('success', 'Items ditambahkan.');
     }
 
     /**

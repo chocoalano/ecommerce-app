@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use App\Models\Auth\Customer;
 use App\Models\OrderProduct\Order;
 use App\Models\OrderProduct\OrderReturn;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -22,11 +24,9 @@ class AuthController extends Controller
      */
     public function showLogin(Request $request)
     {
-        // Jika pengguna sudah login sebagai 'customer', arahkan langsung ke dashboard
         if (Auth::guard('customer')->check()) {
             return redirect()->route('auth.profile');
         }
-
         return view('pages.auth.login');
     }
 
@@ -301,11 +301,7 @@ class AuthController extends Controller
             })->toArray();
 
             $phoneCountries = [
-                ['label' => 'United States (+1)', 'code' => '+1',  'flag' => 'us'],
-                ['label' => 'United Kingdom (+44)', 'code' => '+44', 'flag' => 'uk'],
-                ['label' => 'Australia (+61)', 'code' => '+61', 'flag' => 'au'],
-                ['label' => 'Germany (+49)', 'code' => '+49', 'flag' => 'de'],
-                ['label' => 'France (+33)', 'code' => '+33', 'flag' => 'fr'],
+                ['label' => 'Indonesia (+62)', 'code' => '+62',  'flag' => 'id'],
             ];
         }
 
@@ -324,12 +320,12 @@ class AuthController extends Controller
             'address.label' => 'required|string',
             'address.recipient_name' => 'required|string',
             'address.phone' => 'required|string',
-            'address.line1' => 'required|string',
-            'address.line2' => 'nullable|string',
-            'address.city' => 'required|string',
-            'address.province' => 'required|string',
-            'address.postal_code' => 'required|string',
-            'address.country' => 'required|string',
+            'address.line1' => 'required|string|max:255',
+            'address.line2' => 'nullable|string|max:255',
+            'address.city' => 'required|string|max:100',
+            'address.province' => 'required|string|max:100',
+            'address.postal_code' => 'required|string|max:20',
+            'address.country' => 'required|string|max:100',
             'address.is_default' => 'nullable|boolean',
         ]);
         $customer = Auth::guard('customer')->user();
@@ -337,7 +333,9 @@ class AuthController extends Controller
         $customer->name = $data['name'];
         $customer->full_name = $data['full_name'];
         $customer->email = $data['email'];
-        $customer->password = Hash::make($data['password']);
+        if (!empty($data['password'])) {
+            $customer->password = Hash::make($data['password']);
+        }
         $customer->phone = $data['phone'];
         $customer->save();
         $customer->addresses()->updateOrCreate(
@@ -697,5 +695,41 @@ class AuthController extends Controller
         $customer = Auth::guard('customer')->user();
 
         return view('pages.auth.account-setting', compact('customer'));
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            // pakai rule bawaan 'current_password' -> cek terhadap guard default (web)
+            'current_password' => ['required', 'current_password'],
+            'password' => [
+                'required',
+                'confirmed',                // butuh field: password_confirmation
+                Password::min(8)            // minimal 8
+                    ->mixedCase()           // huruf besar & kecil
+                    ->letters()             // mengandung huruf
+                    ->numbers()             // mengandung angka
+                    ->symbols(),            // mengandung simbol
+                'different:current_password'// beda dari password lama
+            ],
+        ], [], [
+            'current_password' => 'kata sandi saat ini',
+            'password' => 'kata sandi baru',
+        ]);
+
+        // Cegah reuse exact hash (opsional, sudah ditangani 'different')
+        if (Hash::check($validated['password'], $user->password)) {
+            return back()->withErrors([
+                'password' => 'Kata sandi baru tidak boleh sama dengan kata sandi saat ini.',
+            ]);
+        }
+
+        // Update password
+        $user->forceFill([
+            'password' => Hash::make($validated['password']),
+        ])->save();
+        return redirect()->route('auth.profile')->with('success', 'Password berhasil diperbarui.');
     }
 }

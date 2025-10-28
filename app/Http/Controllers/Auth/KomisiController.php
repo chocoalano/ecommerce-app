@@ -29,91 +29,6 @@ class KomisiController extends Controller
         );
     }
 
-    // --- Generator Data Komisi ---
-
-    private function generateSponsorData(): array
-    {
-        $faker = Faker::create('id_ID');
-        $data = [];
-        $jumlah_baris = 50;
-        $statuses = ['Dibayar', 'Pending', 'Batal'];
-
-        for ($i = 1; $i <= $jumlah_baris; $i++) {
-            $data[] = [
-                'ID Transaksi'  => 'SPN' . $faker->unique()->randomNumber(5),
-                'Tanggal'       => $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d H:i'),
-                'Member Disponsori' => $faker->name,
-                'Jumlah (IDR)'  => $faker->numberBetween(50000, 250000),
-                'Status'        => $faker->randomElement($statuses),
-            ];
-        }
-        $faker->unique(true);
-        return $data;
-    }
-
-    private function generatePairingData(): array
-    {
-        $faker = Faker::create('id_ID');
-        $data = [];
-        $jumlah_baris = 120;
-        $statuses = ['Dibayar', 'Pending'];
-
-        for ($i = 1; $i <= $jumlah_baris; $i++) {
-            $data[] = [
-                'ID Transaksi'  => 'PRG' . $faker->unique()->randomNumber(5),
-                'Tanggal'       => $faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i'),
-                'Pasangan Kiri' => $faker->numberBetween(1, 10),
-                'Pasangan Kanan' => $faker->numberBetween(1, 10),
-                'Jumlah (IDR)'  => $faker->numberBetween(100000, 500000),
-                'Status'        => $faker->randomElement($statuses),
-            ];
-        }
-        $faker->unique(true);
-        return $data;
-    }
-
-    private function generateMatchingData(): array
-    {
-        $faker = Faker::create('id_ID');
-        $data = [];
-        $jumlah_baris = 75;
-        $statuses = ['Dibayar', 'Pending'];
-
-        for ($i = 1; $i <= $jumlah_baris; $i++) {
-            $data[] = [
-                'ID Transaksi'  => 'MTCH' . $faker->unique()->randomNumber(4),
-                'Tanggal'       => $faker->dateTimeBetween('-3 months', 'now')->format('Y-m-d H:i'),
-                'Generasi'      => $faker->numberBetween(1, 5),
-                'Sumber Komisi' => $faker->name,
-                'Jumlah (IDR)'  => $faker->numberBetween(50000, 300000),
-                'Status'        => $faker->randomElement($statuses),
-            ];
-        }
-        $faker->unique(true);
-        return $data;
-    }
-
-    private function generateRewardsData(): array
-    {
-        $faker = Faker::create('id_ID');
-        $data = [];
-        $jumlah_baris = 20;
-        $statuses = ['Diterima', 'Diajukan', 'Kadaluarsa'];
-        $rewards = ['Handphone Baru', 'Motor Matic', 'Perjalanan Umroh', 'Mobil Murah'];
-
-        for ($i = 1; $i <= $jumlah_baris; $i++) {
-            $data[] = [
-                'ID Reward'     => 'RWD' . $faker->unique()->randomNumber(3),
-                'Tanggal Klaim' => $faker->dateTimeBetween('-2 years', 'now')->format('Y-m-d'),
-                'Nama Reward'   => $faker->randomElement($rewards),
-                'Syarat Omset'  => $faker->numberBetween(50000000, 500000000),
-                'Status'        => $faker->randomElement($statuses),
-            ];
-        }
-        $faker->unique(true);
-        return $data;
-    }
-
     // --- Fungsi Controller Utama ---
 
     public function index(Request $request) {
@@ -129,27 +44,27 @@ class KomisiController extends Controller
         switch ($type) {
             case 'sponsors':
                 $title = 'Daftar Komisi Sponsor';
-                $allData = $this->generateSponsorData();
+                $allData =[];
                 $header = ['ID Transaksi', 'Tanggal', 'Member Disponsori', 'Jumlah (IDR)', 'Status'];
                 break;
             case 'pairings':
                 $title = 'Daftar Komisi Pairing';
-                $allData = $this->generatePairingData();
+                $allData =[];
                 $header = ['ID Transaksi', 'Tanggal', 'Pasangan Kiri', 'Pasangan Kanan', 'Jumlah (IDR)', 'Status'];
                 break;
             case 'matchings':
                 $title = 'Daftar Komisi Matching';
-                $allData = $this->generateMatchingData();
+                $allData =[];
                 $header = ['ID Transaksi', 'Tanggal', 'Generasi', 'Sumber Komisi', 'Jumlah (IDR)', 'Status'];
                 break;
             case 'rewards':
                 $title = 'Daftar Komisi Reward';
-                $allData = $this->generateRewardsData();
+                $allData =[];
                 $header = ['ID Reward', 'Tanggal Klaim', 'Nama Reward', 'Syarat Omset (IDR)', 'Status'];
                 break;
             default:
                 $title = 'Daftar Komisi Sponsor';
-                $allData = $this->generateSponsorData();
+                $allData =[];
                 $header = ['ID Transaksi', 'Tanggal', 'Member Disponsori', 'Jumlah (IDR)', 'Status'];
                 $type = 'sponsors'; // Setel tipe default
                 break;
