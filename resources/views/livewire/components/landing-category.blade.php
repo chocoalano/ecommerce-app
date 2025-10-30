@@ -53,7 +53,7 @@
                     <div
                         class="mt-2 w-full opacity-0 translate-y-5 transition duration-300 group-hover:opacity-100 group-hover:translate-y-0">
                         {{-- Flux Button 'Lihat Produk' diganti dengan tag <a> --}}
-                        <a href="{{ route('products.index', ['category'=>$value->slug]) }}"
+                        <a href="{{ route('products.index', ['category[0]'=>$value->slug]) }}"
                             class="inline-flex items-center justify-center
                                    w-48 h-13 bg-zinc-900 text-white hover:bg-zinc-800
                                    font-semibold transition duration-300
