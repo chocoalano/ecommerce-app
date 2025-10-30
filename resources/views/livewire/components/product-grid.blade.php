@@ -53,6 +53,6 @@
 
     {{-- Pagination --}}
     <div class="mt-12">
-        {{ $products->onEachSide(1)->links('vendor.pagination.tailwind') }}
+        {{ $products->onEachSide(1)->links() }}
     </div>
 </main>

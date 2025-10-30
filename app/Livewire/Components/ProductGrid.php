@@ -12,47 +12,54 @@ class ProductGrid extends Component
 {
     use WithPagination;
 
+    /** Gunakan tema Tailwind Livewire */
+    protected $paginationTheme = 'tailwind';
+
+    /** STATE */
     public array $filters = [];
     public string $sort = 'popular';
     public int $perPage = 12;
 
-    protected $paginationTheme = 'tailwind';
-
+    /** Dengarkan event dari filter form */
     protected $listeners = ['filtersUpdated' => 'applyFilters'];
 
-    // Persist ke URL
+    /** Persist di URL agar back/forward tetap konsisten */
     protected $queryString = [
         'sort'    => ['as' => 'sort',     'except' => 'popular'],
         'perPage' => ['as' => 'per_page', 'except' => 12],
+        // 'page' dikelola otomatis oleh WithPagination
     ];
 
-    public function applyFilters($filters): void
-    {
-        $this->filters = is_array($filters) ? $filters : [];
-        $this->resetPage();
-    }
-
-    public function updatedSort(): void
+    /** Reset page SEBELUM nilai berubah (lebih aman di Livewire v3) */
+    public function updatingSort(): void
     {
         $this->resetPage();
     }
 
-    public function updatedPerPage($value): void
+    public function updatingPerPage(): void
     {
-        // Cast & guard
-        $this->perPage = max(1, (int) $value);
+        // pastikan integer
+        $this->perPage = max(1, (int) $this->perPage);
         $this->resetPage();
+    }
 
-        // Optional: beri tahu komponen lain / UI
-        $this->dispatch('perPageUpdated', perPage: $this->perPage);
+    public function updatingFilters(): void
+    {
+        $this->resetPage();
+    }
+
+    /** Dipanggil saat form/filter mengirim event 'filtersUpdated' */
+    public function applyFilters(array $filters = []): void
+    {
+        $this->filters = $filters;
+        $this->resetPage();
     }
 
     public function render()
     {
         $query = Product::query()
             ->select('products.*')
-            ->with(['media']) // ambil yang perlu
-            // hitung avg_rating & reviews_count (approved only) untuk display & sorting
+            ->with(['media'])
             ->withAvg(['reviews as avg_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
             ->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved', true)]);
 
@@ -66,11 +73,8 @@ class ProductGrid extends Component
         }
 
         if (!empty($this->filters['categories'])) {
-            // Anda tadi pakai slug. Jika sebenarnya ID, ganti ke categories.id
-            $cats = (array) $this->filters['categories'];
-            $query->whereHas('categories', function (Builder $q) use ($cats) {
-                $q->whereIn('slug', $cats);
-            });
+            $cats = (array) $this->filters['categories']; // asumsikan slug
+            $query->whereHas('categories', fn(Builder $q) => $q->whereIn('slug', $cats));
         }
 
         if (!empty($this->filters['minPrice'])) {
@@ -85,12 +89,10 @@ class ProductGrid extends Component
         }
 
         if (!empty($this->filters['inStock'])) {
-            // sesuaikan nama kolom stok Anda
             $query->where('products.stock', '>', 0);
         }
 
         if (!empty($this->filters['onSale'])) {
-            // sesuaikan relasi/polar Anda
             $query->whereHas('promotions');
         }
 
@@ -101,26 +103,24 @@ class ProductGrid extends Component
                 break;
 
             case 'price_asc':
-                $query->orderBy('products.base_price', 'asc')
-                      ->orderBy('products.created_at', 'desc');
+                $query->orderBy('products.base_price', 'asc')->orderBy('products.created_at', 'desc');
                 break;
 
             case 'price_desc':
-                $query->orderBy('products.base_price', 'desc')
-                      ->orderBy('products.created_at', 'desc');
+                $query->orderBy('products.base_price', 'desc')->orderBy('products.created_at', 'desc');
                 break;
 
             case 'popular':
             default:
-                // Lebih stabil daripada inRandomOrder
                 $query->orderBy('reviews_count', 'desc')
                       ->orderBy(DB::raw('COALESCE(avg_rating,0)'), 'desc')
                       ->orderBy('products.created_at', 'desc');
                 break;
         }
 
-        // Paginate + pertahankan query string (sort/per_page dsb.)
-        $products = $query->paginate($this->perPage)->withQueryString();
+        // Penting: JANGAN pakai view pagination Laravel biasa.
+        // Cukup paginate; Livewire akan render link yang benar (wire:click) melalui view 'livewire::tailwind'
+        $products = $query->paginate($this->perPage);
 
         return view('livewire.components.product-grid', [
             'products' => $products,
