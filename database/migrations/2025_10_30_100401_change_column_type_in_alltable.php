@@ -49,7 +49,8 @@ return new class extends Migration
      * Tabel 'couriers' dikecualikan karena menggunakan SMALLINT UNSIGNED.
      */
     private $pkTables = [
-        'customers', 'products', 'categories', 'inventory_locations', 'promotions',
+        // 'customers', // PERBAIKAN: Dihapus karena PK ini mungkin memiliki nilai > 4.2M, menyebabkan truncation/error.
+        'products', 'categories', 'inventory_locations', 'promotions',
         'carts', 'payment_methods', 'product_reviews', 'pages',
         'footers', 'newsletter_subscribers', 'articles', 'returns', 'shipments',
         'payments', 'payment_transactions', 'order_items', 'orders', 'wishlists',
@@ -141,13 +142,20 @@ return new class extends Migration
             }
         }
 
-        // 2. Ubah tipe data kolom FK ke unsigned integer (32-bit), kecuali courier_id (16-bit)
+        // 2. Ubah tipe data kolom FK ke unsigned integer (32-bit)
         foreach ($this->tables as $tableName => $foreignKeys) {
             Schema::table($tableName, function (Blueprint $table) use ($foreignKeys) {
                 foreach ($foreignKeys as $fk) {
 
-                    // PERBAIKAN BARU: courier_id harus small integer karena couriers.id adalah SMALLINT UNSIGNED
-                    $typeMethod = ($fk === 'courier_id') ? 'unsignedSmallInteger' : 'unsignedInteger';
+                    // Tentukan tipe data
+                    $typeMethod = 'unsignedInteger';
+                    if ($fk === 'courier_id') {
+                        // courier_id merujuk ke couriers.id (SMALLINT UNSIGNED)
+                        $typeMethod = 'unsignedSmallInteger';
+                    } else if ($fk === 'customer_id') {
+                        // PERBAIKAN TRUNCATION: customer_id dipertahankan sebagai 64-bit (BigInteger)
+                        $typeMethod = 'unsignedBigInteger';
+                    }
 
                     if (in_array($fk, $this->nullableFks)) {
                         // FIX TRUNCATED DATA: Panggil nullable() sebelum change() secara eksplisit
@@ -248,7 +256,10 @@ return new class extends Migration
         }
 
         // 2. Ubah Primary Keys kembali ke bigIncrements
-        foreach ($this->pkTables as $tableName) {
+        // Tabel 'customers' harus di-handle secara eksplisit di sini karena dikeluarkan dari $pkTables di up()
+        $rollbackPkTables = array_merge($this->pkTables, ['customers']);
+
+        foreach ($rollbackPkTables as $tableName) {
             Schema::table($tableName, function (Blueprint $table) {
                 // bigIncrements akan mengembalikan ke BIGINT UNSIGNED AUTO_INCREMENT
                 $table->bigIncrements('id')->change();
@@ -259,7 +270,7 @@ return new class extends Migration
         foreach ($this->tables as $tableName => $foreignKeys) {
             Schema::table($tableName, function (Blueprint $table) use ($foreignKeys) {
                 foreach ($foreignKeys as $fk) {
-                    // Rollback semua FK, termasuk courier_id, ke unsignedBigInteger (tipe aslinya)
+                    // Rollback semua FK ke unsignedBigInteger (tipe aslinya)
                     if (in_array($fk, $this->nullableFks)) {
                          // Tambahkan nullable() saat rollback jika kolom bersifat nullable
                         $table->unsignedBigInteger($fk)->nullable()->change();
