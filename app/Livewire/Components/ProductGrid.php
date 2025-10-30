@@ -3,6 +3,8 @@
 namespace App\Livewire\Components;
 
 use App\Models\Product\Product;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -10,77 +12,115 @@ class ProductGrid extends Component
 {
     use WithPagination;
 
-    public $filters = [];
-    public $sort = 'popular';
-    public $perPage = 12;
+    public array $filters = [];
+    public string $sort = 'popular';
+    public int $perPage = 12;
+
+    protected $paginationTheme = 'tailwind';
 
     protected $listeners = ['filtersUpdated' => 'applyFilters'];
 
-    public function applyFilters($filters)
+    // Persist ke URL
+    protected $queryString = [
+        'sort'    => ['as' => 'sort',     'except' => 'popular'],
+        'perPage' => ['as' => 'per_page', 'except' => 12],
+    ];
+
+    public function applyFilters($filters): void
     {
-        $this->filters = $filters;
+        $this->filters = is_array($filters) ? $filters : [];
         $this->resetPage();
     }
 
-    public function updatedSort()
+    public function updatedSort(): void
     {
         $this->resetPage();
     }
 
-    public function updatedPerPage()
+    public function updatedPerPage($value): void
     {
+        // Cast & guard
+        $this->perPage = max(1, (int) $value);
         $this->resetPage();
+
+        // Optional: beri tahu komponen lain / UI
+        $this->dispatch('perPageUpdated', perPage: $this->perPage);
     }
 
     public function render()
     {
-        $query = Product::query()->with(['media', 'reviews']);
+        $query = Product::query()
+            ->select('products.*')
+            ->with(['media']) // ambil yang perlu
+            // hitung avg_rating & reviews_count (approved only) untuk display & sorting
+            ->withAvg(['reviews as avg_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
+            ->withCount(['reviews as reviews_count' => fn($q) => $q->where('is_approved', true)]);
 
-        // Apply filters
+        // === Filters ===
         if (!empty($this->filters['q'])) {
-            $query->where('name', 'like', '%' . $this->filters['q'] . '%');
-        }
-        if (!empty($this->filters['categories'])) {
-            $query->whereHas('categories', function ($q) {
-                $q->whereIn('slug', $this->filters['categories']);
+            $search = trim((string) $this->filters['q']);
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('products.name', 'like', "%{$search}%")
+                  ->orWhere('products.description', 'like', "%{$search}%");
             });
         }
+
+        if (!empty($this->filters['categories'])) {
+            // Anda tadi pakai slug. Jika sebenarnya ID, ganti ke categories.id
+            $cats = (array) $this->filters['categories'];
+            $query->whereHas('categories', function (Builder $q) use ($cats) {
+                $q->whereIn('slug', $cats);
+            });
+        }
+
         if (!empty($this->filters['minPrice'])) {
-            $query->where('base_price', '>=', $this->filters['minPrice']);
+            $query->where('products.base_price', '>=', (float) $this->filters['minPrice']);
         }
         if (!empty($this->filters['maxPrice'])) {
-            $query->where('base_price', '<=', $this->filters['maxPrice']);
+            $query->where('products.base_price', '<=', (float) $this->filters['maxPrice']);
         }
+
         if (!empty($this->filters['minRating'])) {
-            $query->withAvg('reviews as avg_rating', 'rating')
-                  ->having('avg_rating', '>=', $this->filters['minRating']);
+            $query->having('avg_rating', '>=', (float) $this->filters['minRating']);
         }
+
         if (!empty($this->filters['inStock'])) {
-            $query->where('stock', '>', 0);
+            // sesuaikan nama kolom stok Anda
+            $query->where('products.stock', '>', 0);
         }
+
         if (!empty($this->filters['onSale'])) {
+            // sesuaikan relasi/polar Anda
             $query->whereHas('promotions');
         }
 
-        // Apply sorting
+        // === Sorting ===
         switch ($this->sort) {
             case 'new':
-                $query->latest();
+                $query->orderBy('products.created_at', 'desc');
                 break;
+
             case 'price_asc':
-                $query->orderBy('base_price', 'asc');
+                $query->orderBy('products.base_price', 'asc')
+                      ->orderBy('products.created_at', 'desc');
                 break;
+
             case 'price_desc':
-                $query->orderBy('base_price', 'desc');
+                $query->orderBy('products.base_price', 'desc')
+                      ->orderBy('products.created_at', 'desc');
                 break;
+
             case 'popular':
             default:
-                // Add your logic for popular sorting, e.g., by sales or views
-                $query->inRandomOrder(); // Placeholder
+                // Lebih stabil daripada inRandomOrder
+                $query->orderBy('reviews_count', 'desc')
+                      ->orderBy(DB::raw('COALESCE(avg_rating,0)'), 'desc')
+                      ->orderBy('products.created_at', 'desc');
                 break;
         }
 
-        $products = $query->paginate($this->perPage);
+        // Paginate + pertahankan query string (sort/per_page dsb.)
+        $products = $query->paginate($this->perPage)->withQueryString();
 
         return view('livewire.components.product-grid', [
             'products' => $products,

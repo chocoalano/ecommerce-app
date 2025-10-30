@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\DTOs\OrderFilterDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Order\OrderIndexRequest;
+use App\Http\Resources\OrderResource;
 use App\Models\Auth\Customer;
 use App\Models\OrderProduct\Order;
 use App\Models\OrderProduct\OrderReturn;
 use App\Models\Product\Wishlist;
 use App\Models\Product\ProductReview;
+use App\Services\Orders\OrderService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +22,11 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    protected OrderService $orderService;
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
     /**
      * Menampilkan halaman login.
      */
@@ -250,9 +258,9 @@ class AuthController extends Controller
     /**
      * Menampilkan halaman registrasi.
      */
-    public function showProfile(Request $request)
+    public function showProfile(OrderIndexRequest $request)
     {
-        $customer = Auth::guard('customer')->user();
+        $customer = auth('customer')->user();
 
         $breadcrumbs = [
             ['label' => 'Beranda', 'href' => route('home')],
@@ -261,10 +269,7 @@ class AuthController extends Controller
         ];
 
         if (!$customer) {
-            $overviewStats = [];
-            $statusMap = [];
-            $orders = [];
-            $phoneCountries = [];
+            return redirect()->route('auth.login');
         } else {
             $ordersCount = Order::where('customer_id', $customer->id)->count();
             $reviewsCount = ProductReview::where('customer_id', $customer->id)->count();
@@ -279,37 +284,28 @@ class AuthController extends Controller
                 ['icon' => 'return', 'label' => 'Retur Produk', 'value' => (string)$returnsCount, 'delta' => null, 'delta_bg' => 'bg-green-100', 'delta_text' => 'text-green-800', 'note' => 'Permintaan retur'],
             ];
 
-            $statusMap = [
-                'in_transit' => ['label' => 'Dalam pengiriman', 'badge' => 'bg-yellow-100 text-yellow-800', 'icon' => 'truck-badge'],
-                'cancelled'  => ['label' => 'Dibatalkan', 'badge' => 'bg-red-100 text-red-800', 'icon' => 'x'],
-                'completed'  => ['label' => 'Selesai', 'badge' => 'bg-green-100 text-green-800', 'icon' => 'check'],
-            ];
+            $filters  = OrderFilterDTO::fromRequest($request);
+            $orders = $this->orderService->listCustomerOrders($customer, $filters);
 
-            $ordersRaw = Order::where('customer_id', $customer->id)->latest('placed_at')->take(4)->get();
-            $orders = $ordersRaw->map(function ($o) {
-                $statusKey = match ($o->status) {
-                    Order::ST_SHIPPED, Order::ST_PROCESS => 'in_transit',
-                    Order::ST_CANCELED => 'cancelled',
-                    Order::ST_COMPLETED => 'completed',
-                    default => 'completed',
-                };
-
-                return [
-                    'id' => $o->order_no,
-                    'date' => $o->placed_at ? $o->placed_at->format('d.m.Y') : ($o->created_at?->format('d.m.Y') ?? ''),
-                    'price' => 'Rp ' . number_format($o->grand_total ?? 0, 0, ',', '.'),
-                    'status_key' => $statusKey,
-                    'menu_id' => $o->id,
-                    'has_cancel' => $o->status !== Order::ST_CANCELED,
-                ];
-            })->toArray();
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'orders'     => OrderResource::collection($orders->items()),
+                    'pagination' => [
+                        'current_page' => $orders->currentPage(),
+                        'last_page'    => $orders->lastPage(),
+                        'total'        => $orders->total(),
+                        'per_page'     => $orders->perPage(),
+                    ],
+                ]);
+            }
 
             $phoneCountries = [
-                ['label' => 'Indonesia (+62)', 'code' => '+62',  'flag' => 'id'],
+                ['code' => 'ID', 'name' => 'Indonesia', 'dial_code' => '+62']
             ];
-        }
 
-        return view('pages.auth.profile.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'statusMap', 'orders', 'phoneCountries'));
+            return view('pages.auth.profile.profile', compact('customer', 'breadcrumbs', 'overviewStats', 'orders', 'phoneCountries'));
+        }
     }
 
     public function updateProfile(Request $request)
@@ -357,6 +353,9 @@ class AuthController extends Controller
                 'is_default' => $data['address']['is_default'] ?? true,
             ]
         );
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Profil berhasil diperbarui.']);
+        }
 
         return redirect()->route('auth.profile')->with('success', 'Profil berhasil diperbarui.');
     }
@@ -418,71 +417,6 @@ class AuthController extends Controller
         }
         return view('pages.auth.profile.list_network', compact('customer', 'breadcrumbs', 'members', 'title'));
     }
-
-    /**
-     * Memproses network binary.
-     */
-    public function network_info(Request $request)
-    {
-        $customer = Auth::guard('customer')->user();
-        $title = 'Jaringan Binary';
-        $breadcrumbs = [
-            ['label' => 'Beranda', 'href' => route('home')],
-            ['label' => 'Profil', 'href' => route('auth.profile')],
-            ['label' => 'Jaringan Binary', 'href' => null],
-        ];
-
-        // parameter: info => active | inactive | all (default active for prospects)
-        $info = $request->input('info', 'binary');
-        // allow caller to choose depth: 1 = direct children, 'all' = all descendants
-        $depthParam = $request->input('depth', 1);
-
-        // base query: find descendants of current customer
-        $query = $customer->descendants;
-        // apply status filter
-        if ($info === 'binary') {
-            $title = 'Jaringan Binary Member Aktif';
-        } elseif ($info === 'sponsorship') {
-            $title = 'Jaringan Sponsorship Member Tidak Aktif';
-        } else {
-            $title = 'Jaringan Binary Member Aktif Untuk Prospek';
-        }
-        // map to lightweight structure for view
-        $members = collect($query)->flatMap(function ($member) use ($customer) {
-
-            // Fungsi rekursif untuk memproses anak-anaknya
-            $processMember = function ($member, $parentName = null) use (&$processMember) {
-                $born = $member['created_at'] ? Carbon::parse($member['created_at'])->format('Y') : null;
-                $death = $member['updated_at'] ? Carbon::parse($member['updated_at'])->format('Y') : null;
-
-                // Data utama member
-                $data = [[
-                    'id' => $member['id'],
-                    'name' => $member['name'],
-                    'email' => $member['email'],
-                    'is_active' => (bool) ($member['is_active'] ?? false),
-                    'born' => $born,
-                    'death' => $death,
-                    'depth' => $member['depth'] ?? null,
-                    'parent' => $parentName,
-                ]];
-
-                // Jika ada anak-anak, proses mereka juga
-                if (!empty($member['children'])) {
-                    foreach ($member['children'] as $child) {
-                        $data = array_merge($data, $processMember($child, $member['name']));
-                    }
-                }
-
-                return $data;
-            };
-
-            // Proses root member
-            return $processMember($member, $customer->name);
-        })->values()->toArray();
-        array_push($members, ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email, 'is_active' => (bool) $customer->is_active, 'born' => $customer->created_at ? $customer->created_at->format('Y') : null, 'death' => $customer->updated_at ? $customer->updated_at->format('Y') : null, 'depth' => 0, 'parent' => null]);
-        return view('pages.auth.profile.network_info', compact('customer', 'breadcrumbs', 'title', 'members'));
-    }
     /**
      * Memproses permintaan logout.
      */
@@ -506,34 +440,9 @@ class AuthController extends Controller
      */
     public function orders(Request $request)
     {
-        $customer = Auth::guard('customer')->user();
-
-        // Query orders dengan pagination dan filter
-        $query = Order::where('customer_id', $customer->id)
-            ->with(['items.product', 'shippingAddress'])
-            ->orderBy('created_at', 'desc');
-
-        // Filter berdasarkan status jika ada
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter berdasarkan tanggal jika ada
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // Search berdasarkan order number
-        if ($request->filled('search')) {
-            $query->where('order_no', 'like', '%' . $request->search . '%');
-        }
-
-        $orders = $query->paginate(5)->withQueryString();
-
+        $customer = auth('customer')->user();
+        $filters  = OrderFilterDTO::fromRequest($request);
+        $orders = $this->orderService->listCustomerOrders($customer, $filters);
         // Get available statuses for filter
         $statuses = [
             'pending' => 'Menunggu Pembayaran',
@@ -547,13 +456,13 @@ class AuthController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'orders' => $orders->items(),
+                'orders'     => OrderResource::collection($orders->items()),
                 'pagination' => [
                     'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'total' => $orders->total(),
-                    'per_page' => $orders->perPage(),
-                ]
+                    'last_page'    => $orders->lastPage(),
+                    'total'        => $orders->total(),
+                    'per_page'     => $orders->perPage(),
+                ],
             ]);
         }
 
@@ -725,15 +634,15 @@ class AuthController extends Controller
 
         // Cegah reuse exact hash (opsional, sudah ditangani 'different')
         if (Hash::check($validated['password'], $user->password)) {
-            return back()->withErrors([
+            return response()->json([
                 'password' => 'Kata sandi baru tidak boleh sama dengan kata sandi saat ini.',
-            ]);
+            ], 422);
         }
 
         // Update password
         $user->forceFill([
             'password' => Hash::make($validated['password']),
         ])->save();
-        return redirect()->route('auth.profile')->with('success', 'Password berhasil diperbarui.');
+        return response()->json(['success' => true, 'message' => 'Password berhasil diperbarui.'], 200);
     }
 }

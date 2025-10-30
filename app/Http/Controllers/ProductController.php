@@ -154,16 +154,12 @@ class ProductController extends Controller
         if (!$product) {
             abort(404, 'Product not found');
         }
-
         // Get related products
         $relatedProducts = $this->productService->getRelatedProducts($product, 8);
-
         // Calculate pricing
         $pricing = $this->productService->calculatePrice($product, 1);
-
         // Prepare view data
         $viewData = $this->prepareProductDetailData($product, $pricing);
-
         // Build breadcrumb
         $primaryCategory = $product->categories->first();
         $breadcrumbItems = $this->buildProductBreadcrumb($product, $primaryCategory);
@@ -370,6 +366,13 @@ class ProductController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    /**
+     * Reviews the specified resource from storage.
+     */
+    public function reviews(Request $request, string $id)
+    {
+        dd($request->all());
     }
 
     /**

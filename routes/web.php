@@ -61,4 +61,7 @@ require __DIR__.'/midtrans.php';
 
 // Include wishlist routes
 require __DIR__.'/wishlist.php';
+// Include article routes
 require __DIR__.'/article.php';
+// Include mail routes
+require __DIR__.'/mail.php';

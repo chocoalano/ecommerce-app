@@ -26,6 +26,7 @@ Route::post('/cart/add', [ProductController::class, 'store'])->name('cart.add');
 
 // Category products
 Route::get('/category/{categorySlug}', [ProductController::class, 'category'])->name('products.category');
+Route::put('/product/reviews/{productId}', [ProductController::class, 'reviews'])->name('products.reviews.store');
 
 /*
 |--------------------------------------------------------------------------

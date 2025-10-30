@@ -2,101 +2,120 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\DTOs\OrderFilterDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
+use App\Services\Orders\OrderService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-use Illuminate\Support\Collection;
-use Illuminate\Pagination\Paginator;
 
 class TransactionOrderController extends Controller
 {
-    /**
-     * Menghasilkan data yang sudah di-paginate sederhana dari koleksi.
-     * Digunakan untuk Simple Pagination (hanya Next/Previous).
-     */
-    private function simplePaginateCollection(Collection $collection, Request $request, int $perPage = 10): Paginator
-    {
-        $currentPage = $request->get('page', 1);
-        $offset = ($currentPage * $perPage) - $perPage;
-
-        // Paginator sederhana hanya memotong data dan tidak menghitung total
-        return new Paginator(
-            $collection->slice($offset, $perPage)->values(), // Data untuk halaman saat ini
-            $perPage, // Item per halaman
-            $currentPage, // Halaman saat ini
-            ['path' => $request->url()] // Konfigurasi path untuk link
-        );
-    }
-
-    // --- Fungsi Controller Utama ---
-
+    public function __construct(protected OrderService $orderService) {}
     public function index(Request $request)
     {
-        // 1. Ambil data autentikasi dan breadcrumbs
-        $customer = Auth::guard('customer')->user();
-        // Mengubah default type ke 'Pending' yang mewakili 'Pending Pembayaran'
-        $type = $request->input('type', 'Pending');
-        $allData = [];
-        $header = [];
+        $customer = auth('customer')->user();
+        if (!$customer) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+            return redirect()->route('auth.login');
+        }
 
+        // ---------- UI crumbs & title berdasarkan ?type= ----------
+        $typeInput   = $request->input('type', 'All');
+        $typeNorm    = strtolower($typeInput);
         $breadcrumbs = [
             ['label' => 'Beranda', 'href' => route('home')],
-            ['label' => 'Profil', 'href' => route('auth.profile')],
+            ['label' => 'Profil',  'href' => route('auth.profile')],
             ['label' => 'Daftar Order', 'href' => null],
         ];
-
-        // 2. Tentukan Data, Header, dan Judul berdasarkan 'type'
-        switch ($type) {
-            case 'Pending':
-                $title = 'Daftar Order Pending Pembayaran';
-                $baseData = [];
-                $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Pending Pembayaran');
-                // Header disesuaikan untuk Order Produk
-                $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
+        $title = 'Daftar Semua Order Produk';
+        switch ($typeNorm) {
+            case 'pending':
+                $title .= ' (Pending Pembayaran)';
                 $breadcrumbs[] = ['label' => 'Order Pending', 'href' => null];
+                $request->merge(['status' => 'pending']);
                 break;
 
-            case 'Berbayar':
+            case 'shipped': // confirmed|processing|shipped
                 $title = 'Daftar Order Diproses / Dikirim';
-                // Menggabungkan status Diproses dan Dikirim
-                $baseData = [];
-                $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Diproses' || $item['Status'] === 'Dikirim');
-                $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Order Diproses', 'href' => null];
+                $request->merge(['status_in' => ['confirmed','processing','shipped']]);
                 break;
-            case 'Selesai':
+
+            case 'completed':
                 $title = 'Daftar Order Selesai';
-                $baseData = [];
-                $allData = array_filter($baseData, fn($item) => $item['Status'] === 'Selesai');
-                $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Order Selesai', 'href' => null];
+                $request->merge(['status' => 'completed']);
                 break;
 
             default:
-                $title = 'Daftar Semua Order Produk';
-                $allData = []; // Tampilkan semua order
-                $header = ['ID Order', 'Tanggal', 'Nama Produk', 'Kuantitas', 'Total (IDR)', 'Status'];
                 $breadcrumbs[] = ['label' => 'Semua Order', 'href' => null];
-                $type = 'All'; // Setel tipe default non-filter
+                $typeInput = 'All';
                 break;
         }
 
-        // 3. Konversi Array ke Collection Laravel
-        // array_filter mengembalikan array yang perlu di-reset key-nya
-        $collection = collect(array_values($allData));
+        // ---------- PerPage (clamp & default) ----------
+        $perPage = (int) $request->integer('per_page', 5);
+        $perPage = max(1, min(50, $perPage));
+        // pastikan masuk ke DTO
+        if (!$request->filled('per_page')) {
+            $request->merge(['per_page' => $perPage]);
+        }
+        // ---------- Filter DTO ----------
+        // DTO harus mendukung: search, status, status_in[], date_from, date_to, per_page, page
+        $filters = OrderFilterDTO::fromRequest($request);
+        // ---------- Ambil data via Service (balik LengthAwarePaginator) ----------
+        $orders = $this->orderService->listCustomerOrders($customer, $filters);
 
-        // 4. Lakukan Pagination
-        $paginatedData = $this->simplePaginateCollection($collection, $request, 10);
+        // ---------- Label status (untuk dropdown non-AJAX) ----------
+        $statuses = [
+            'pending'    => 'Menunggu Pembayaran',
+            'confirmed'  => 'Dikonfirmasi',
+            'processing' => 'Diproses',
+            'shipped'    => 'Dikirim',
+            'completed'  => 'Selesai',
+            'cancelled'  => 'Dibatalkan',
+        ];
 
-        // 5. Kirim data yang sudah di-paginate, header, dan title ke View
+        // ---------- JSON (sinkron dengan orders-adapted.js) ----------
+        if ($request->wantsJson() || $request->ajax()) {
+            // Pastikan OrderResource memuat relasi: items.product, shippingAddress (alias shipping_address di resource)
+            $ordersArray = collect($orders->items())
+                ->map(fn ($o) => (new OrderResource($o))->toArray($request))
+                ->values()
+                ->all();
+
+            return response()->json([
+                'success'    => true,
+                'orders'     => $ordersArray,
+                'pagination' => [
+                    'current_page' => $orders->currentPage(),
+                    'last_page'    => $orders->lastPage(),
+                    'total'        => $orders->total(),
+                    'per_page'     => $orders->perPage(),
+                ],
+            ]);
+        }
+
+        // ---------- Halaman shell (AJAX yang isi list) ----------
         return view('pages.auth.profile.list_transaction', [
-            'customer'    => $customer,
-            'breadcrumbs' => $breadcrumbs,
-            'data'        => $paginatedData,
-            'header'      => $header, // Sertakan header untuk view
-            'title'       => $title,
-            'currentType' => $type, // Kirim tipe saat ini untuk navigasi/penanda
+            'customer'           => $customer,
+            'breadcrumbs'        => $breadcrumbs,
+            'title'              => $title,
+            'currentType'        => $typeInput,
+            'statuses'           => $statuses,
+
+            // untuk dropdown per page (kalau dipakai)
+            'perPageDefault'     => $orders->perPage(),
+
+            // data-attr dipakai JS
+            'sourceUrl'          => route('auth.orders'),
+            'detailUrlTemplate'  => '/auth/orders/:id',
+            'cancelUrlTemplate'  => '/auth/orders/:id/cancel',
         ]);
     }
 }

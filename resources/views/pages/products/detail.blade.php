@@ -36,7 +36,7 @@
             <div class="hidden sm:flex mt-4 gap-3 overflow-x-auto py-2">
                 @foreach ($product->media as $idx => $media)
                     <div class="size-16 bg-gray-100 rounded-lg cursor-pointer ring-2 ring-transparent hover:ring-zinc-500 transition border border-gray-200">
-                        <img src="{{ $media->url }}" alt="{{ $media->alt_text ?? 'Thumbnail ' . ($idx + 1) }}" class="w-full h-full object-contain p-2">
+                        <img src="{{ asset('storage/'.$media->url) }}" alt="{{ $media->alt_text ?? 'Thumbnail ' . ($idx + 1) }}" class="w-full h-full object-contain p-2">
                     </div>
                 @endforeach
             </div>
@@ -112,7 +112,7 @@
             </div>
 
             {{-- Action Buttons (Wishlist + Add to Cart) --}}
-            <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 lg:static lg:p-0 lg:border-t-0 lg:shadow-none z-10">
+            <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 lg:static lg:p-0 lg:border-t-0 lg:shadow-none z-10" id="productPage" data-stock="{{ $stock }}" data-is-out-of-stock="{{ $isOutOfStock ? 'true' : 'false' }}">
                 <div class="flex flex-col sm:flex-row gap-4 max-w-3xl lg:max-w-full mx-auto">
                     {{-- Wishlist --}}
                     <a href="#"
@@ -145,348 +145,6 @@
                                     {{ $isOutOfStock ? 'disabled' : '' }}>
                                 <button type="button" class="px-4 py-3 text-gray-700 hover:bg-gray-100" data-qty-inc>+</button>
                             </div>
-
-                            <script>
-                                // Ensure script runs only once
-                                if (!window.addToCartInitialized) {
-                                    window.addToCartInitialized = true;
-
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        const qtyInput = document.getElementById('qty');
-                                        const decreaseBtn = document.querySelector('[data-qty-dec]');
-                                        const increaseBtn = document.querySelector('[data-qty-inc]');
-                                        const maxStock = {{ $stock }};
-
-                                        // Wait for all elements to be available
-                                        if (!qtyInput || !decreaseBtn || !increaseBtn) {
-                                            console.error('Cart elements not found in DOM');
-                                            return;
-                                        }
-
-                                        // Decrease quantity
-                                        decreaseBtn.addEventListener('click', function() {
-                                            const currentValue = parseInt(qtyInput.value) || 1;
-                                            if (currentValue > 1) {
-                                                qtyInput.value = currentValue - 1;
-                                            }
-                                        });
-
-                                        // Increase quantity
-                                        increaseBtn.addEventListener('click', function() {
-                                            const currentValue = parseInt(qtyInput.value) || 1;
-                                            if (currentValue < maxStock) {
-                                                qtyInput.value = currentValue + 1;
-                                            }
-                                        });
-
-                                    // Validate input
-                                    qtyInput.addEventListener('input', function() {
-                                        let value = parseInt(this.value) || 1;
-                                        if (value < 1) value = 1;
-                                        if (value > maxStock) value = maxStock;
-                                        this.value = value;
-                                    });
-
-                                    // Keyboard shortcuts
-                                    qtyInput.addEventListener('keydown', function(e) {
-                                        // Arrow up/down for quantity adjustment
-                                        if (e.key === 'ArrowUp') {
-                                            e.preventDefault();
-                                            increaseBtn.click();
-                                        } else if (e.key === 'ArrowDown') {
-                                            e.preventDefault();
-                                            decreaseBtn.click();
-                                        }
-                                        // Enter to add to cart
-                                        else if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            const form = document.getElementById('add-to-cart-form');
-                                            if (form) {
-                                                form.dispatchEvent(new Event('submit'));
-                                            }
-                                        }
-                                    });
-
-                                    // Global keyboard shortcut: Ctrl+A to add to cart (when on product page)
-                                    document.addEventListener('keydown', function(e) {
-                                        if (e.ctrlKey && e.key === 'a' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                                            e.preventDefault();
-                                            const form = document.getElementById('add-to-cart-form');
-                                            if (form && !{{ $isOutOfStock ? 'true' : 'false' }}) {
-                                                form.dispatchEvent(new Event('submit'));
-                                            }
-                                        }
-                                    });
-
-                                    // AJAX Add to Cart handler
-                                    const addToCartForm = document.getElementById('add-to-cart-form');
-                                    if (addToCartForm) {
-                                        // Remove existing listener if any
-                                        addToCartForm.removeEventListener('submit', handleAddToCart);
-                                        addToCartForm.addEventListener('submit', handleAddToCart);
-                                    }
-                                });
-                            }
-
-                            // Add to Cart AJAX function
-                                async function handleAddToCart(event) {
-                                    event.preventDefault();
-
-                                const form = event.target;
-                                const submitBtn = form.querySelector('button[type="submit"]');
-                                const qtyInput = form.querySelector('input[name="quantity"]');
-
-                                // Debug: Log button state
-                                console.log('Submit button found:', !!submitBtn);
-                                console.log('Button disabled:', submitBtn?.disabled);
-                                console.log('Button classes:', submitBtn?.className);
-
-                                if (!qtyInput) {
-                                    showToast('Form tidak valid.', 'error');
-                                    return;
-                                }
-
-                                if (!submitBtn) {
-                                    showToast('Tombol submit tidak ditemukan.', 'error');
-                                    return;
-                                }                                    const quantity = parseInt(qtyInput.value);
-                                    const maxStock = {{ $stock }};
-
-                                    // Check if product is out of stock
-                                    if (maxStock <= 0) {
-                                        showToast('Produk ini sedang habis stok.', 'error');
-                                        return;
-                                    }
-
-                                    // Validate quantity
-                                    if (quantity < 1) {
-                                        showToast('Kuantitas minimal adalah 1.', 'error');
-                                        qtyInput.value = 1;
-                                        return;
-                                    }
-
-                                    if (quantity > maxStock) {
-                                        showToast(`Kuantitas maksimal adalah ${maxStock}.`, 'error');
-                                        qtyInput.value = maxStock;
-                                        return;
-                                    }
-
-                                    try {
-                                        // Set loading state
-                                        setButtonLoading(submitBtn, true);
-
-                                        // Debug: Log request details
-                                        console.log('Sending AJAX request to:', form.action);
-                                        console.log('Form data:', Object.fromEntries(new FormData(form)));
-
-                                        const formData = new FormData(form);
-                                        const response = await fetch(form.action, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Accept': 'application/json',
-                                                'X-Requested-With': 'XMLHttpRequest',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                                            },
-                                            body: formData
-                                        });
-
-                                        console.log('Response status:', response.status);
-                                        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-                                        // Handle redirect responses (302, 301, etc.)
-                                        if (response.redirected || response.status >= 300 && response.status < 400) {
-                                            console.warn('Server returned redirect, this should not happen for AJAX requests');
-                                            showToast('Server mengarahkan ulang, silakan coba lagi.', 'warning');
-                                            return;
-                                        }
-
-                                        let data = null;
-                                        try {
-                                            data = await response.json();
-                                            console.log('Response data:', data);
-                                        } catch (parseError) {
-                                            console.error('JSON parse error:', parseError);
-
-                                            // Try to get response as text for debugging
-                                            try {
-                                                const responseText = await response.text();
-                                                console.log('Response text:', responseText);
-
-                                                // Check if it's a redirect HTML page
-                                                if (responseText.includes('<title>Redirecting</title>') || responseText.includes('Redirecting to')) {
-                                                    showToast('Server melakukan redirect. Periksa konfigurasi middleware.', 'error');
-                                                    return;
-                                                }
-                                            } catch (textError) {
-                                                console.error('Could not read response as text:', textError);
-                                            }
-
-                                            throw new Error('Invalid server response');
-                                        }
-
-                                        if (response.ok && data.success) {
-                                            // Clear loading state first
-                                            setButtonLoading(submitBtn, false);
-
-                                            // Success feedback with enhanced animation
-                                            showToast(data.message || 'Produk berhasil ditambahkan ke keranjang!', 'success');
-
-                                            // Add success animation to button after ensuring loading state is cleared
-                                            setTimeout(() => {
-                                                if (submitBtn && !submitBtn.disabled) {
-                                                    addSuccessAnimation(submitBtn);
-                                                }
-                                            }, 150);
-
-                                            // Optional: Reset quantity to 1 after successful add
-                                            qtyInput.value = 1;
-
-                                            // Optional: Show cart summary or redirect suggestion
-                                            if (data.cart_count) {
-                                                setTimeout(() => {
-                                                    showToast(`Keranjang Anda sekarang memiliki ${data.cart_count} item.`, 'info');
-                                                }, 1500);
-                                            }
-
-                                        } else {
-                                            // Server returned error
-                                            const errorMsg = data?.message || 'Gagal menambahkan produk ke keranjang.';
-                                            showToast(errorMsg, 'error');
-
-                                            // Handle specific errors
-                                            if (data?.errors?.quantity) {
-                                                showToast(data.errors.quantity[0], 'error');
-                                            }
-                                        }
-
-                                    } catch (error) {
-                                        console.error('Add to cart error:', error);
-
-                                        // Network or other errors
-                                        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                                            showToast('Koneksi bermasalah. Silakan coba lagi.', 'error');
-                                        } else {
-                                            showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
-                                        }
-                                    } finally {
-                                        // Only remove loading state if it wasn't already cleared by success handler
-                                        if (submitBtn.disabled && submitBtn.classList.contains('opacity-75')) {
-                                            setButtonLoading(submitBtn, false);
-                                        }
-                                    }
-                                }
-
-                                // Button loading state helper
-                                function setButtonLoading(button, isLoading = true) {
-                                    if (!button) return;
-
-                                    if (isLoading) {
-                                        // Store original state
-                                        if (!button.dataset.originalText) {
-                                            button.dataset.originalText = button.textContent.trim();
-                                        }
-                                        if (!button.dataset.originalHTML) {
-                                            button.dataset.originalHTML = button.innerHTML;
-                                        }
-
-                                        button.disabled = true;
-                                        button.classList.add('opacity-75', 'cursor-not-allowed');
-
-                                        // Replace content with spinner and loading text
-                                        button.innerHTML = `
-                                            <div class="loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent border-solid rounded-full animate-spin mr-2"></div>
-                                            Menambahkan...
-                                        `;
-                                    } else {
-                                        button.disabled = false;
-                                        button.classList.remove('opacity-75', 'cursor-not-allowed');
-
-                                        // Restore original content
-                                        if (button.dataset.originalHTML) {
-                                            button.innerHTML = button.dataset.originalHTML;
-                                        }
-                                    }
-                                }
-
-                                // Toast function (make sure this exists globally or include toast script)
-                                function showToast(message, type = 'info') {
-                                    // Try multiple toast system references
-                                    if (typeof window.showToast === 'function') {
-                                        window.showToast(message, type);
-                                    } else if (typeof toastManager !== 'undefined' && toastManager.show) {
-                                        toastManager.show(message, type);
-                                    } else {
-                                        // Fallback - wait a bit longer for toast system to load
-                                        let attempts = 0;
-                                        const maxAttempts = 5;
-
-                                        const tryToast = () => {
-                                            attempts++;
-
-                                            if (typeof window.showToast === 'function') {
-                                                window.showToast(message, type);
-                                            } else if (typeof toastManager !== 'undefined' && toastManager.show) {
-                                                toastManager.show(message, type);
-                                            } else if (attempts < maxAttempts) {
-                                                setTimeout(tryToast, 100);
-                                            } else {
-                                                // Final fallback - just log to console
-                                                console.log(`Toast [${type}]: ${message}`);
-                                                // Show browser alert for important messages
-                                                if (type === 'error') {
-                                                    alert(`Error: ${message}`);
-                                                } else if (type === 'success') {
-                                                    alert(`Success: ${message}`);
-                                                }
-                                            }
-                                        };
-
-                                        tryToast();
-                                    }
-                                }
-
-                                // Enhanced button visual feedback
-                                function addSuccessAnimation(button) {
-                                    if (!button) return;
-
-                                    // Clear any existing timeout
-                                    if (button.successTimeout) {
-                                        clearTimeout(button.successTimeout);
-                                    }
-
-                                    // Store original state if not already stored
-                                    if (!button.dataset.originalHTML) {
-                                        button.dataset.originalHTML = button.innerHTML;
-                                    }
-
-                                    // Apply success state
-                                    button.innerHTML = `
-                                        <svg class="w-5 h-5 mr-2 animate-bounce text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Berhasil Ditambahkan!
-                                    `;
-
-                                    // Update button classes
-                                    button.classList.remove('bg-zinc-900', 'hover:bg-zinc-700', 'focus:ring-zinc-300');
-                                    button.classList.add('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-300');
-
-                                    // Set timeout to restore original state
-                                    button.successTimeout = setTimeout(() => {
-                                        if (button.dataset.originalHTML) {
-                                            button.innerHTML = button.dataset.originalHTML;
-                                        }
-
-                                        // Restore original classes
-                                        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'focus:ring-green-300');
-                                        button.classList.add('bg-zinc-900', 'hover:bg-zinc-700', 'focus:ring-zinc-300');
-
-                                        // Clear the timeout reference
-                                        button.successTimeout = null;
-                                    }, 2000);
-                                }
-                            </script>
-
                             {{-- Submit --}}
                             <button type="submit"
                                 class="inline-flex items-center justify-center flex-1 w-full px-6 py-3 text-base font-semibold text-center text-white
@@ -582,10 +240,25 @@
     <livewire:components.product-reviews :product="$product" class="mt-10" />
     <hr class="my-12 border-gray-200" />
 </div>
-@if ($relatedProducts && $relatedProducts->count() > 0)
+@if (!empty($relatedProducts))
+@php
+    $parsing = $relatedProducts->map(function ($p) {
+                    $image = optional($p->primaryMedia)->url ?: asset('images/galaxy-z-flip7-share-image.png');
+                    $rawPrice = $p->base_price ?? 0;
+
+                    return [
+                        'id'=> $p->id,
+                        'sku' => $p->sku,
+                        'title' => $p->name,
+                        'image' => $image,
+                        'price' => 'Rp'.number_format((float) $rawPrice, 0, ',', '.'),
+                        'rating' => $p->avg_rating ? round($p->avg_rating, 1) : null,
+                    ];
+                });
+@endphp
     <livewire:components.product-carousel title="Rekomendasi produk untuk anda"
         description="Kami selalu berusaha untuk memberikan produk terbaik untuk memenuhi kebutuhan anda."
-        :data="$relatedProducts->toArray()" />
+        :data="$parsing->toArray()" />
 @endif
 
 @endsection

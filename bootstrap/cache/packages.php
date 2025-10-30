@@ -136,6 +136,13 @@
       0 => 'Livewire\\LivewireServiceProvider',
     ),
   ),
+  'mokhosh/filament-rating' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Mokhosh\\FilamentRating\\FilamentRatingServiceProvider',
+    ),
+  ),
   'nesbot/carbon' => 
   array (
     'providers' => 

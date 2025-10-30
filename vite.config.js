@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/filament/store/theme.css',
                 'resources/css/app.css',
                 'resources/js/toast-manager.js',
+                'resources/css/email.css',
                 'resources/js/app.js',
             ],
             refresh: true,

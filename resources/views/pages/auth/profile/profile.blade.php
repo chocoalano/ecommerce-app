@@ -195,97 +195,16 @@
                 </div>
 
                 {{-- Latest Orders --}}
-                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-8">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-900">Pesanan Terbaru</h3>
-
-                    @forelse ($orders as $o)
-                        @php
-                            $status = $statusMap[$o['status_key'] ?? ''] ?? [
-                                'badge' => 'bg-gray-100 text-gray-700',
-                                'label' => 'Tidak diketahui',
-                                'icon'  => null,
-                            ];
-                            $menuId = 'dropdownOrderModal'.$o['menu_id'];
-                            $btnId  = 'actionsMenuDropdownModal'.$o['menu_id'];
-                        @endphp
-
-                        <div class="flex flex-wrap items-center gap-y-4 {{ $loop->last ? 'pt-4 md:pt-5' : 'border-b border-gray-200 md:py-5 py-4 pb-4' }}">
-                            <dl class="w-1/2 sm:w-48">
-                                <dt class="text-base font-medium text-gray-500">ID Pesanan:</dt>
-                                <dd class="mt-1.5 text-base font-semibold text-gray-900">
-                                    <a href="#" class="hover:underline">{{ $o['id'] }}</a>
-                                </dd>
-                            </dl>
-
-                            <dl class="w-1/2 sm:w-1/4 md:flex-1 lg:w-auto">
-                                <dt class="text-base font-medium text-gray-500">Tanggal:</dt>
-                                <dd class="mt-1.5 text-base font-semibold text-gray-900">{{ $o['date'] }}</dd>
-                            </dl>
-
-                            <dl class="w-1/2 sm:w-1/5 md:flex-1 lg:w-auto">
-                                <dt class="text-base font-medium text-gray-500">Harga:</dt>
-                                <dd class="mt-1.5 text-base font-semibold text-gray-900">{{ $o['price'] }}</dd>
-                            </dl>
-
-                            <dl class="w-1/2 sm:w-1/4 sm:flex-1 lg:w-auto">
-                                <dt class="text-base font-medium text-gray-500">Status:</dt>
-                                <dd class="me-2 mt-1.5 inline-flex shrink-0 items-center rounded px-2.5 py-0.5 text-xs font-medium {{ $status['badge'] }}">
-                                    @switch($status['icon'])
-                                        @case('truck-badge')
-                                            <svg class="me-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/></svg>
-                                            @break
-                                        @case('x')
-                                            <svg class="me-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/></svg>
-                                            @break
-                                        @default
-                                            <svg class="me-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5"/></svg>
-                                    @endswitch
-                                    {{ $status['label'] }}
-                                </dd>
-                            </dl>
-
-                            <div class="w-full sm:flex sm:w-32 sm:items-center sm:justify-end sm:gap-4">
-                                <button id="{{ $btnId }}" data-dropdown-toggle="{{ $menuId }}" type="button"
-                                        class="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-zinc-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 md:w-auto">
-                                    Actions
-                                    <svg class="-me-0.5 ms-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg>
-                                </button>
-                                <div id="{{ $menuId }}"
-                                     class="z-10 hidden w-40 divide-y divide-gray-100 rounded-lg border border-gray-100 bg-white shadow">
-                                    <ul class="p-2 text-left text-sm font-medium text-gray-500" aria-labelledby="{{ $btnId }}">
-                                        <li>
-                                            <a href="#"
-                                               class="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                                                <svg class="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"/></svg>
-                                                <span>Pesan lagi</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#"
-                                               class="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                                                <svg class="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"/><path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
-                                                Detail pesanan
-                                            </a>
-                                        </li>
-                                        @if(!empty($o['has_cancel']))
-                                            <li>
-                                                <a href="#" data-modal-target="deleteOrderModal" data-modal-toggle="deleteOrderModal"
-                                                   class="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                                    <svg class="me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/></svg>
-                                                    Batalkan pesanan
-                                                </a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="rounded-lg border border-gray-200 bg-white p-6 text-center text-gray-500">
-                            Belum ada pesanan.
-                        </div>
-                    @endforelse
+                <div id="ordersContainer"
+                    data-source-url="{{ route('auth.profile') }}"
+                    data-cancel-url-template="/auth/orders/:id/cancel"
+                    data-detail-url-template="/auth/orders/:id">
                 </div>
+
+                <div id="ordersFeedback" class="hidden mb-3 rounded border p-2 text-sm"></div>
+
+                <div id="ordersList"></div>
+                <nav id="ordersPagination" class="mt-3"></nav>
             </div>
         </div>
     </div>
@@ -303,43 +222,51 @@
                         <span class="sr-only">Tutup</span>
                     </button>
                 </div>
-
-                <form method="POST" action="{{ route('auth.profile.update') }}" class="p-4 md:p-5">
+                <form id="profileUpdateForm" method="POST" action="{{ route('auth.profile.update') }}" class="p-4 md:p-5" novalidate>
                     @csrf
-                    @php /** @var \App\Models\Address|null $address */ $address = $primaryAddress; @endphp
+                    @php $address = $primaryAddress; @endphp
+
+                    <!-- Feedback message container (dipakai oleh JS: #feedback-message & #feedback-content) -->
+                    <div id="feedback-message" class="mb-4" style="display:none;">
+                        <div id="feedback-content" class="rounded border p-3 text-sm"></div>
+                    </div>
 
                     {{-- ====== DATA PROFIL (Customer) ====== --}}
                     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="col-span-2 sm:col-span-1">
-                            <label for="name_input" class="mb-2 block text-sm font-medium text-gray-900">Nama (name)</label>
-                            <input type="text" id="name_input" name="name"
-                                   value="{{ old('name', $customer?->name) }}"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                   placeholder="Mis. username / nama singkat">
+                        <label for="name_input" class="mb-2 block text-sm font-medium text-gray-900">Nama (name)</label>
+                        <input type="text" id="name_input" name="name"
+                                value="{{ old('name', $customer?->name) }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Mis. username / nama singkat">
+                        <p id="error-name" class="error-message"></p>
                         </div>
 
                         <div class="col-span-2 sm:col-span-1">
-                            <label for="full_name_input" class="mb-2 block text-sm font-medium text-gray-900">Nama Lengkap (full_name)*</label>
-                            <input type="text" id="full_name_input" name="full_name"
-                                   value="{{ old('full_name', $customer?->full_name) }}"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                   placeholder="Nama lengkap" required>
+                        <label for="full_name_input" class="mb-2 block text-sm font-medium text-gray-900">Nama Lengkap (full_name)*</label>
+                        <input type="text" id="full_name_input" name="full_name"
+                                value="{{ old('full_name', $customer?->full_name) }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Nama lengkap" required>
+                        <p id="error-full_name" class="error-message"></p>
                         </div>
 
                         <div class="col-span-2 sm:col-span-1">
-                            <label for="email_input" class="mb-2 block text-sm font-medium text-gray-900">Email*</label>
-                            <input type="email" id="email_input" name="email"
-                                   value="{{ old('email', $customer?->email) }}"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                   placeholder="Email aktif" required>
+                        <label for="email_input" class="mb-2 block text-sm font-medium text-gray-900">Email*</label>
+                        <input type="email" id="email_input" name="email"
+                                value="{{ old('email', $customer?->email) }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Email aktif" required>
+                        <p id="error-email" class="error-message"></p>
                         </div>
 
                         <div class="col-span-2">
-                            <label for="phone_input" class="mb-2 block text-sm font-medium text-gray-900">Nomor Telepon (phone)*</label>
-                            <input type="text" id="phone_input" name="phone"
-                                   value="{{ old('phone', $customer?->phone) }}"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                   placeholder="Nomor telepon" required>
+                        <label for="phone_input" class="mb-2 block text-sm font-medium text-gray-900">Nomor Telepon (phone)*</label>
+                        <input type="text" id="phone_input" name="phone"
+                                value="{{ old('phone', $customer?->phone) }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Nomor telepon" required>
+                        <p id="error-phone" class="error-message"></p>
                         </div>
                     </div>
 
@@ -347,92 +274,104 @@
                     <div class="mb-6">
                         <div class="mb-3 text-sm font-semibold text-gray-800">Alamat Utama</div>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_label" class="mb-2 block text-sm font-medium text-gray-900">Label (label)*</label>
-                                <input type="text" id="address_label" name="address[label]"
-                                       value="{{ old('address.label', $address->label ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Mis. Rumah, Kantor" required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_label" class="mb-2 block text-sm font-medium text-gray-900">Label (label)*</label>
+                            <input type="text" id="address_label" name="address[label]"
+                                value="{{ old('address.label', $address->label ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Mis. Rumah, Kantor" required>
+                            <p id="error-address-label" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_recipient_name" class="mb-2 block text-sm font-medium text-gray-900">Nama Penerima (recipient_name)*</label>
-                                <input type="text" id="address_recipient_name" name="address[recipient_name]"
-                                       value="{{ old('address.recipient_name', $address->recipient_name ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Nama penerima" required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_recipient_name" class="mb-2 block text-sm font-medium text-gray-900">Nama Penerima (recipient_name)*</label>
+                            <input type="text" id="address_recipient_name" name="address[recipient_name]"
+                                value="{{ old('address.recipient_name', $address->recipient_name ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Nama penerima" required>
+                            <p id="error-address-recipient_name" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2">
-                                <label for="address_phone" class="mb-2 block text-sm font-medium text-gray-900">Telepon Penerima (phone)*</label>
-                                <input type="text" id="address_phone" name="address[phone]"
-                                       value="{{ old('address.phone', $address->phone ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Nomor telepon penerima" required>
-                            </div>
+                        <div class="col-span-2">
+                            <label for="address_phone_recipient" class="mb-2 block text-sm font-medium text-gray-900">Telepon Penerima (phone)*</label>
+                            <input type="text" id="address_phone_recipient" name="address[phone]"
+                                value="{{ old('address.phone', $address->phone ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Nomor telepon penerima" required>
+                            <p id="error-address-phone" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2">
-                                <label for="address_line1" class="mb-2 block text-sm font-medium text-gray-900">Alamat Baris 1 (line1)*</label>
-                                <input type="text" id="address_line1" name="address[line1]"
-                                       value="{{ old('address.line1', $address->line1 ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Jalan, nomor, RT/RW" required>
-                            </div>
+                        <div class="col-span-2">
+                            <label for="address_line1" class="mb-2 block text-sm font-medium text-gray-900">Alamat Baris 1 (line1)*</label>
+                            <input type="text" id="address_line1" name="address[line1]"
+                                value="{{ old('address.line1', $address->line1 ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Jalan, nomor, RT/RW" required>
+                            <p id="error-address-line1" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2">
-                                <label for="address_line2" class="mb-2 block text-sm font-medium text-gray-900">Alamat Baris 2 (line2)</label>
-                                <input type="text" id="address_line2" name="address[line2]"
-                                       value="{{ old('address.line2', $address->line2 ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Blok, lantai, patokan (opsional)">
-                            </div>
+                        <div class="col-span-2">
+                            <label for="address_line2" class="mb-2 block text-sm font-medium text-gray-900">Alamat Baris 2 (line2)</label>
+                            <input type="text" id="address_line2" name="address[line2]"
+                                value="{{ old('address.line2', $address->line2 ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Blok, lantai, patokan (opsional)">
+                            <p id="error-address-line2" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_city" class="mb-2 block text-sm font-medium text-gray-900">Kota/Kabupaten (city)*</label>
-                                <input type="text" id="address_city" name="address[city]"
-                                       value="{{ old('address.city', $address->city ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_city" class="mb-2 block text-sm font-medium text-gray-900">Kota/Kabupaten (city)*</label>
+                            <input type="text" id="address_city" name="address[city]"
+                                value="{{ old('address.city', $address->city ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                required>
+                            <p id="error-address-city" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_province" class="mb-2 block text-sm font-medium text-gray-900">Provinsi (province)*</label>
-                                <input type="text" id="address_province" name="address[province]"
-                                       value="{{ old('address.province', $address->province ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_province" class="mb-2 block text-sm font-medium text-gray-900">Provinsi (province)*</label>
+                            <input type="text" id="address_province" name="address[province]"
+                                value="{{ old('address.province', $address->province ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                required>
+                            <p id="error-address-province" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_postal_code" class="mb-2 block text-sm font-medium text-gray-900">Kode Pos (postal_code)*</label>
-                                <input type="text" id="address_postal_code" name="address[postal_code]"
-                                       value="{{ old('address.postal_code', $address->postal_code ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_postal_code" class="mb-2 block text-sm font-medium text-gray-900">Kode Pos (postal_code)*</label>
+                            <input type="text" id="address_postal_code" name="address[postal_code]"
+                                value="{{ old('address.postal_code', $address->postal_code ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                required>
+                            <!-- sinkron dengan JS: #error-address-postal-code (pakai tanda minus) -->
+                            <p id="error-address-postal-code" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2 sm:col-span-1">
-                                <label for="address_country" class="mb-2 block text-sm font-medium text-gray-900">Negara (country)*</label>
-                                <input type="text" id="address_country" name="address[country]"
-                                       value="{{ old('address.country', $address->country ?? '') }}"
-                                       class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
-                                       placeholder="Mis. ID" required>
-                            </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label for="address_country" class="mb-2 block text-sm font-medium text-gray-900">Negara (country)*</label>
+                            <input type="text" id="address_country" name="address[country]"
+                                value="{{ old('address.country', $address->country ?? '') }}"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Mis. ID" required>
+                            <p id="error-address-country" class="error-message"></p>
+                        </div>
 
-                            <div class="col-span-2">
-                                <label class="inline-flex items-center gap-2 text-sm text-gray-900">
-                                    <input type="checkbox" name="address[is_default]" value="1"
-                                           @checked(old('address.is_default', $address->is_default ?? false))
-                                           class="h-4 w-4 rounded border-gray-300 text-zinc-700 focus:ring-zinc-500">
-                                    Jadikan sebagai alamat utama (is_default)
-                                </label>
-                            </div>
+                        <div class="col-span-2">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-900">
+                            <input type="checkbox" name="address[is_default]" value="1"
+                                    @checked(old('address.is_default', $address->is_default ?? false))
+                                    class="h-4 w-4 rounded border-gray-300 text-zinc-700 focus:ring-zinc-500">
+                            Jadikan sebagai alamat utama (is_default)
+                            </label>
+                        </div>
                         </div>
                     </div>
 
-                    <button type="submit"
+                    <button id="submitButton" type="submit"
                             class="inline-flex w-full items-center justify-center rounded-lg bg-zinc-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-300">
-                        <svg class="-ms-0.5 me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <svg class="-ms-0.5 me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
                         Simpan perubahan
                     </button>
                 </form>
@@ -455,72 +394,91 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('auth.profile.password.update') }}" class="p-4 md:p-5">
+                <form id="changePasswordForm" method="POST" action="{{ route('auth.profile.password.update') }}" class="p-4 md:p-5" novalidate>
                     @csrf
-                    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="current_password" class="mb-2 block text-sm font-medium text-gray-900">Kata Sandi (saat ini)</label>
-                            <input type="password" id="current_password" name="current_password" autocomplete="current-password"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500" required>
-                            @error('current_password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+
+                    <!-- Feedback area (dipakai jQuery) -->
+                    <div id="pwd-feedback-message" class="mb-4" style="display:none;">
+                        <div id="pwd-feedback-content" class="rounded border p-3 text-sm"></div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Kata Sandi Saat Ini -->
+                        <div>
+                            <label for="current_password_input" class="mb-2 block text-sm font-medium text-gray-900">Kata Sandi Saat Ini*</label>
+                            <input type="password" id="current_password_input" name="current_password"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Masukkan kata sandi lama Anda" required value="123456789">
+                            <p id="error-current_password" class="error-message"></p>
                         </div>
 
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="password" class="mb-2 block text-sm font-medium text-gray-900">Kata Sandi (baru)</label>
-                            <input type="password" id="password" name="password" autocomplete="new-password"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500" required>
-                            @error('password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        <!-- Kata Sandi Baru -->
+                        <div>
+                            <label for="password_input" class="mb-2 block text-sm font-medium text-gray-900">Kata Sandi Baru*</label>
+                            <input type="password" id="password_input" name="password"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Minimal 8 karakter" required value="password">
+                            <p id="error-password" class="error-message"></p>
                         </div>
 
-                        <div class="col-span-2 sm:col-span-1">
-                            <label for="password_confirmation" class="mb-2 block text-sm font-medium text-gray-900">Kata Sandi (konfirmasi)</label>
-                            <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password"
-                                   class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500" required>
+                        <!-- Konfirmasi Kata Sandi Baru -->
+                        <div>
+                            <label for="password_confirmation_input" class="mb-2 block text-sm font-medium text-gray-900">Konfirmasi Kata Sandi Baru*</label>
+                            <input type="password" id="password_confirmation_input" name="password_confirmation"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-zinc-500 focus:ring-zinc-500"
+                                placeholder="Ulangi kata sandi baru" required value="password">
+                            <p id="error-password_confirmation" class="error-message"></p>
                         </div>
                     </div>
 
-                    <button type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-lg bg-zinc-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-300">
+                    <button type="submit" id="submitPasswordButton"
+                        class="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-zinc-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-4 focus:ring-zinc-300 transition duration-150 ease-in-out">
                         <svg class="-ms-0.5 me-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Simpan perubahan
+                        Ubah Kata Sandi
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    {{-- Delete Order Modal --}}
     <div id="deleteOrderModal" tabindex="-1" aria-hidden="true"
-         class="fixed left-0 right-0 top-0 z-50 hidden h-[calc(100%-1rem)] w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased md:inset-0">
-        <div class="relative max-h-full w-full max-w-md p-4">
-            <div class="relative rounded-lg bg-white">
-                <button type="button" data-modal-hide="deleteOrderModal"
-                        class="absolute right-2.5 top-3 ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
-                    <svg class="h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg>
-                    <span class="sr-only">Close modal</span>
-                </button>
-                <div class="p-6 text-center">
-                    <svg class="mx-auto mb-4 h-12 w-12 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11v8m-4-8v8m8-8v8M4 7h16m-2 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v3M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"></path></svg>
-                    <h3 class="mb-5 text-lg font-normal text-gray-500">Apakah Anda yakin ingin membatalkan pesanan ini?</h3>
-                    <button data-modal-hide="deleteOrderModal" type="button" class="me-2 inline-flex items-center rounded-lg bg-red-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300">
-                        Ya, saya yakin
-                    </button>
-                    <button data-modal-hide="deleteOrderModal" type="button" class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100">Tidak, batalkan</button>
-                </div>
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 p-4">
+        <div class="w-full max-w-md rounded-lg bg-white shadow">
+            <div class="border-b px-5 py-3">
+            <h3 class="text-base font-semibold text-gray-900">Batalkan Pesanan</h3>
+            </div>
+            <div class="px-5 py-4">
+            <p class="text-sm text-gray-600">Yakin ingin membatalkan pesanan <span id="cancelOrderLabel" class="font-semibold text-gray-900">#—</span>?</p>
+            <p class="mt-2 text-xs text-amber-600">Aksi ini tidak dapat dibatalkan.</p>
+            <div id="cancelOrderAlert" class="mt-3 hidden rounded border p-2 text-sm"></div>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 pb-5">
+            <button type="button" id="btnCloseCancelModal"
+                class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Tutup</button>
+            <button type="button" id="btnConfirmCancel"
+                class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                <svg class="-ms-1 me-1 hidden h-4 w-4 animate-spin" id="cancelSpinner" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"></path>
+                </svg>
+                Batalkan Pesanan
+            </button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Modal Detail Pesanan -->
+    <div id="orderDetailModal" tabindex="-1" aria-hidden="true"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 p-4">
+        <div class="w-full max-w-2xl rounded-lg bg-white shadow">
+            <div class="flex items-center justify-between border-b px-5 py-3">
+            <h3 id="orderDetailTitle" class="text-base font-semibold text-gray-900">Detail Pesanan</h3>
+            <button id="btnCloseDetailModal" class="rounded p-1 text-gray-500 hover:bg-gray-100" aria-label="Close">✕</button>
+            </div>
+            <div id="orderDetailBody" class="px-5 py-4">
+            <!-- konten detail via AJAX -->
             </div>
         </div>
     </div>
 </section>
 @endsection
-
-@push('js')
-<script>
-    window.APP_CONFIG = {
-        // Samakan dengan route di form password modal
-        updatePasswordUrl: @json(route('auth.profile.password.update')),
-        cancelOrderBaseUrl: @json(url('/auth/orders')),
-        csrfToken: @json(csrf_token()),
-    };
-</script>
-<script src="{{ asset('pages/auth/profile-page.js') }}"></script>
-@endpush

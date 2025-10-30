@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\OrderRepository;
+use App\Repositories\Orders\EloquentOrderRepository;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\Repositories\BaseRepositoryInterface;
 use App\Contracts\Repositories\ProductRepositoryInterface;
@@ -31,6 +33,8 @@ class RepositoryServiceProvider extends ServiceProvider
         // Category Repository & Service
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(CategoryServiceInterface::class, CategoryService::class);
+
+        $this->app->bind(OrderRepository::class, EloquentOrderRepository::class);
     }
 
     /**

@@ -1,0 +1,10 @@
+/* resources/css/mail.css */
+
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
+/* Anda bisa menambahkan custom style khusus email di sini */
+.paragraph {
+    /* Pastikan style ini juga akan di-inline */
+    font-size: 16px;
+}

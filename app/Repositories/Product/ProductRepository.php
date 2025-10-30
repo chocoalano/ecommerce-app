@@ -74,6 +74,21 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     }
 
     /**
+     * Get products by categories
+     */
+    public function getByRating(array $ratings, int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->query
+            ->whereHas('reviews', function ($query) use ($ratings) {
+                $query->whereIn('rating', $ratings);
+            })
+            ->where('is_active', true)
+            ->with(['categories', 'media', 'primaryMedia'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
      * Search products
      */
     public function search(string $query, array $filters = [], int $perPage = 15): LengthAwarePaginator
@@ -182,8 +197,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function getRelated(Product $product, int $limit = 8): Collection
     {
         $categoryIds = $product->categories->pluck('id')->toArray();
-
-        return $this->query
+        $product = $this->query
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
             ->when(!empty($categoryIds), function ($query) use ($categoryIds) {
@@ -195,6 +209,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->inRandomOrder()
             ->limit($limit)
             ->get();
+        return $product;
     }
 
     /**

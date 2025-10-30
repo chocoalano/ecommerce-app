@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\Auth\Customer;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SyncCustomerNetwork;
-use Illuminate\Support\Facades\Log;
 
 class CustomerObserver
 {

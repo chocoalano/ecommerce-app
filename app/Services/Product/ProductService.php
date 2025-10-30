@@ -5,6 +5,7 @@ namespace App\Services\Product;
 use App\Contracts\Services\ProductServiceInterface;
 use App\Contracts\Repositories\ProductRepositoryInterface;
 use App\Models\Product\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -25,21 +26,104 @@ class ProductService implements ProductServiceInterface
      */
     public function getAllProducts(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = '';
-        if (!empty($filters['search'])) {
-            $query = $filters['search'];
-            unset($filters['search']);
+        $filters = array_change_key_case($filters, CASE_LOWER);
+
+        $query = Product::query()
+            ->select('products.*')
+            ->where('products.is_active', true)
+            ->with([
+                'categories:id,name',   // pilih kolom secukupnya
+                'media',
+                'primaryMedia',
+            ]);
+
+        // --- Aggregasi rating: avg_rating & reviews_count (hanya yang approved) ---
+        $ratingAgg = DB::table('product_reviews as pr')
+            ->selectRaw('pr.product_id, AVG(pr.rating) AS avg_rating, COUNT(*) AS reviews_count')
+            ->where('pr.is_approved', true)
+            ->groupBy('pr.product_id');
+
+        $query->leftJoinSub($ratingAgg, 'r', function ($join) {
+            $join->on('r.product_id', '=', 'products.id');
+        });
+
+        // --- Search (full-text bila ada, fallback LIKE) ---
+        if ($search = trim($filters['search'] ?? '')) {
+            $query->where(function (Builder $q) use ($search) {
+                try {
+                    // MySQL 5.7+/8 dengan index fulltext di name & description
+                    $q->whereFullText(['products.name', 'products.description'], $search);
+                } catch (\Throwable $e) {
+                    $q->where('products.name', 'like', "%{$search}%")
+                    ->orWhere('products.description', 'like', "%{$search}%");
+                }
+            });
         }
 
-        if (!empty($query)) {
-            return $this->productRepository->search($query, $filters, $perPage);
+        // --- Price range ---
+        if (isset($filters['min_price']) && is_numeric($filters['min_price'])) {
+            $query->where('products.base_price', '>=', (float) $filters['min_price']);
+        }
+        if (isset($filters['max_price']) && is_numeric($filters['max_price'])) {
+            $query->where('products.base_price', '<=', (float) $filters['max_price']);
         }
 
-        return $this->productRepository
-            ->where('is_active', true)
-            ->with(['categories', 'media', 'primaryMedia'])
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        // --- Min rating ---
+        if (isset($filters['min_rating']) && is_numeric($filters['min_rating']) && (float)$filters['min_rating'] > 0) {
+            // null avg_rating (produk tanpa review) otomatis terfilter keluar
+            $query->where('r.avg_rating', '>=', (float) $filters['min_rating']);
+        }
+
+        // --- Categories (array of IDs) ---
+        if (!empty($filters['categories']) && is_array($filters['categories'])) {
+            $ids = array_values(array_filter($filters['categories'], fn($v) => is_numeric($v)));
+            if ($ids) {
+                $query->whereHas('categories', function (Builder $q) use ($ids) {
+                    $q->whereIn('categories.id', $ids);
+                });
+            }
+        }
+
+        // --- In stock ---
+        if (!empty($filters['in_stock'])) {
+            $query->where('products.stock_quantity', '>', 0);
+        }
+
+        // --- On sale ---
+        if (!empty($filters['on_sale'])) {
+            // Sesuaikan dengan skema Anda (is_on_sale/discount_price)
+            $query->where(function (Builder $q) {
+                $q->where('products.is_on_sale', true)
+                ->orWhereNotNull('products.discount_price');
+            });
+        }
+
+        // --- Sorting ---
+        $sortBy       = $filters['sort_by'] ?? 'created_at';
+        $sortDirInput = strtolower($filters['sort_direction'] ?? 'desc');
+        $sortDir      = in_array($sortDirInput, ['asc', 'desc'], true) ? $sortDirInput : 'desc';
+
+        $sortMap = [
+            'created_at' => 'products.created_at',
+            'price'      => 'products.base_price',
+            'name'       => 'products.name',
+            'rating'     => DB::raw('COALESCE(r.avg_rating, 0)'),
+        ];
+        if (!array_key_exists($sortBy, $sortMap)) {
+            $sortBy = 'created_at';
+        }
+
+        if ($sortBy === 'rating') {
+            $query->orderBy($sortMap['rating'], $sortDir)
+                ->orderBy(DB::raw('COALESCE(r.reviews_count, 0)'), $sortDir)
+                ->orderBy('products.created_at', 'desc');
+        } else {
+            $query->orderBy($sortMap[$sortBy], $sortDir)
+                ->orderBy('products.created_at', 'desc');
+        }
+
+        // --- Paginate ---
+        return $query->paginate($perPage)->appends($filters);
     }
 
     /**
@@ -47,21 +131,17 @@ class ProductService implements ProductServiceInterface
      */
     public function getProductBySku(string $sku): ?Product
     {
-        $cacheKey = "product.sku.{$sku}";
-
-        return Cache::remember($cacheKey, 3600, function () use ($sku) {
-            return $this->productRepository
+        return $this->productRepository
                 ->with([
                     'categories',
                     'media',
                     'primaryMedia',
-                    'reviews.user',
+                    'reviews.customer',
                     'promotions' => function ($query) {
                         $query->where('is_active', true);
                     }
                 ])
                 ->findBySku($sku);
-        });
     }
 
     /**
@@ -114,11 +194,7 @@ class ProductService implements ProductServiceInterface
      */
     public function getRelatedProducts(Product $product, int $limit = 8): Collection
     {
-        $cacheKey = "products.related.{$product->id}.{$limit}";
-
-        return Cache::remember($cacheKey, 1800, function () use ($product, $limit) {
-            return $this->productRepository->getRelated($product, $limit);
-        });
+        return $this->productRepository->getRelated($product, $limit);
     }
 
     /**

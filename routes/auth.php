@@ -25,7 +25,7 @@ Route::middleware(['customer'])->group(function () {
         // Order History Routes
         Route::get('/orders', [AuthController::class, 'orders'])->name('orders');
         Route::get('/orders/{order}', [AuthController::class, 'orderDetail'])->name('order.detail');
-        Route::post('/orders/{order}/cancel', [AuthController::class, 'cancelOrder'])->name('order.cancel');
+        Route::delete('/orders/{order}/cancel', [AuthController::class, 'cancelOrder'])->name('order.cancel');
 
         // Logout - Menggunakan POST, sangat disarankan untuk keamanan
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
