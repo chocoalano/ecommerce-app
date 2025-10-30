@@ -1,4 +1,4 @@
-<div x-data="{ open: false }">
+<div x-data="{ open: false }" class="max-w-2xl">
     <!-- Mobile filter button -->
     <div class="p-4 lg:hidden">
         <button @click="open = true" type="button"
@@ -47,7 +47,7 @@
     </div>
 
     <!-- Desktop sidebar -->
-    <aside class="lg:w-10/12 sticky top-6 self-start hidden lg:block">
+    <aside class="w-full max-w-2xl sticky top-6 self-start hidden lg:block">
         <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-200">
                 <h2 class="text-lg font-semibold text-gray-900">Filter Produk</h2>

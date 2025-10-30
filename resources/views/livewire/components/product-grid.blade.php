@@ -1,4 +1,4 @@
-<main class="lg:w-3/4 w-full">
+<main class="w-full ml-5">
     {{-- Top toolbar --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <p class="text-gray-600 text-sm sm:text-base">
@@ -13,7 +13,7 @@
         <div class="flex items-center gap-2">
             <label for="sort-select" class="text-gray-600 text-sm whitespace-nowrap">Urutkan:</label>
             <select id="sort-select" wire:model.live="sort"
-                    class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-900 focus:border-zinc-900 block p-2.5">
+                class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-900 focus:border-zinc-900 block p-2.5">
                 <option value="popular">Paling Populer</option>
                 <option value="new">Terbaru</option>
                 <option value="price_asc">Harga: Rendah → Tinggi</option>
@@ -21,8 +21,8 @@
             </select>
 
             <select wire:model.live="perPage"
-                    class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-900 focus:border-zinc-900 block p-2.5">
-                @foreach ([9,12,24,36,48] as $pp)
+                class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-zinc-900 focus:border-zinc-900 block p-2.5">
+                @foreach ([9, 12, 24, 36, 48] as $pp)
                     <option value="{{ $pp }}">{{ $pp }}/hal</option>
                 @endforeach
             </select>
@@ -30,22 +30,17 @@
     </div>
 
     {{-- PRODUCT GRID --}}
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+    <div
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-{{ $perPage === 9 ? 3 : ($perPage === 12 ? 4 : 5) }} gap-3 sm:gap-4 md:gap-5 lg:gap-6">
         @forelse($products as $product)
             @php
-                $image  = optional($product->media->first())->url ?? asset('/images/galaxy-z-flip7-share-image.png');
-                $price  = $product->base_price;
+                $image = optional($product->media->first())->url ?? asset('/images/galaxy-z-flip7-share-image.png');
+                $price = $product->base_price;
                 $rating = $product->avg_rating ? round($product->avg_rating, 1) : null;
             @endphp
 
-            <livewire:components.card-product
-                :sku="$product->sku"
-                :title="$product->name"
-                :price="'Rp ' . number_format((float)$price, 0, ',', '.')"
-                :image="asset('storage/'.$image)"
-                :rating="$rating"
-                :key="'prod-'.$product->id.'-'.$perPage.'-'.$sort"
-            />
+            <livewire:components.card-product :sku="$product->sku" :title="$product->name" :price="'Rp ' . number_format((float) $price, 0, ',', '.')" :image="asset('storage/' . $image)" :rating="$rating"
+                :key="'prod-' . $product->id . '-' . $perPage . '-' . $sort" />
         @empty
             <div class="col-span-full">
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-10 text-center">
