@@ -31,7 +31,7 @@
 
     {{-- PRODUCT GRID --}}
     <div
-        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-{{ $perPage === 9 ? 3 : ($perPage === 12 ? 4 : 5) }} gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
         @forelse($products as $product)
             @php
                 $image = optional($product->media->first())->url ?? asset('/images/galaxy-z-flip7-share-image.png');
