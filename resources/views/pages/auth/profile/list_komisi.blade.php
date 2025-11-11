@@ -69,37 +69,45 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @forelse ($data as $row)
                                         <tr class="hover:bg-gray-50">
-                                            {{-- Loop untuk menampilkan semua kolom sesuai header --}}
-                                            @foreach ($header as $kolom)
-                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                                    @php
-                                                        $value = $row[$kolom] ?? '-';
-
-                                                        // Pemformatan mata uang dinamis
-                                                        if (strpos($kolom, '(IDR)') !== false || $kolom == 'Syarat Omset') {
-                                                            // PERBAIKAN: Cast $value to float agar number_format menerima tipe data numerik.
-                                                            echo 'Rp' . number_format((float) $value, 0, ',', '.');
-                                                        }
-                                                        // Pemformatan Status
-                                                        elseif ($kolom == 'Status') {
-                                                            $color = match($value) {
-                                                                'Dibayar', 'Diterima' => 'bg-green-100 text-green-800',
-                                                                'Pending', 'Diajukan' => 'bg-yellow-100 text-yellow-800',
-                                                                'Batal', 'Kadaluarsa' => 'bg-red-100 text-red-800',
-                                                                default => 'bg-gray-100 text-gray-800',
-                                                            };
-                                                            echo "<span class='inline-flex items-center rounded-full {$color} px-2 py-1 text-xs font-semibold'>{$value}</span>";
-                                                        }
-                                                        // Aksi (opsional)
-                                                        elseif ($kolom == 'Aksi') {
-                                                            echo '<a href="#" class="text-zinc-600 hover:text-zinc-900">Detail</a>';
-                                                        }
-                                                        else {
-                                                            echo $value;
-                                                        }
-                                                    @endphp
+                                            {{-- Sponsors --}}
+                                            @if($currentType == 'sponsors')
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['id'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['date'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['member'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">{{ $row['amount'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span class="inline-flex items-center rounded-full {{ $row['status_class'] }} px-2 py-1 text-xs font-semibold">{{ $row['status'] }}</span>
                                                 </td>
-                                            @endforeach
+                                            {{-- Pairings --}}
+                                            @elseif($currentType == 'pairings')
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['id'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['date'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['pair_left'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['pair_right'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">{{ $row['amount'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span class="inline-flex items-center rounded-full {{ $row['status_class'] }} px-2 py-1 text-xs font-semibold">{{ $row['status'] }}</span>
+                                                </td>
+                                            {{-- Matchings --}}
+                                            @elseif($currentType == 'matchings')
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['id'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['date'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['generation'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['source'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">{{ $row['amount'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span class="inline-flex items-center rounded-full {{ $row['status_class'] }} px-2 py-1 text-xs font-semibold">{{ $row['status'] }}</span>
+                                                </td>
+                                            {{-- Rewards --}}
+                                            @elseif($currentType == 'rewards')
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row['id'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['date'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ $row['reward_name'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">{{ $row['requirement'] }}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <span class="inline-flex items-center rounded-full {{ $row['status_class'] }} px-2 py-1 text-xs font-semibold">{{ $row['status'] }}</span>
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>
@@ -112,11 +120,9 @@
                                         <td colspan="{{ count($header) }}" class="px-4 py-3 text-right">
                                             <div class="flex justify-end items-center gap-4">
                                                 <div class="text-sm text-gray-500">
-                                                    {{-- Menampilkan halaman saat ini (Simple Paginator) --}}
                                                     Halaman {{ $data->currentPage() }}
                                                 </div>
                                                 <div>
-                                                    {{-- Menggunakan withQueryString() untuk mempertahankan parameter 'type' --}}
                                                     {{ $data->withQueryString()->links('pagination::tailwind') }}
                                                 </div>
                                             </div>

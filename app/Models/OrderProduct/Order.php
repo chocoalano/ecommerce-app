@@ -24,7 +24,7 @@ class Order extends Model
     protected $fillable = [
         'order_no','customer_id','currency','status',
         'subtotal_amount','discount_amount','shipping_amount','tax_amount','grand_total',
-        'shipping_address_id','billing_address_id','applied_promos','payment_method','notes','placed_at',
+        'shipping_address_id','billing_address_id','applied_promos','payment_method','notes','placed_at','paid_at',
     ];
 
     protected $casts = [
@@ -35,6 +35,7 @@ class Order extends Model
         'grand_total'     => 'decimal:2',
         'applied_promos'  => 'array',
         'placed_at'       => 'datetime',
+        'paid_at'         => 'datetime',
     ];
 
     protected static function booted(): void

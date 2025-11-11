@@ -1,12 +1,16 @@
 (function ($) {
+  // Hanya jalankan di halaman transaction order yang punya tabel dengan ID ordersTable
+  const $ordersTable = $('#ordersTable');
+  if (!$ordersTable.length) {
+    return; // Keluar jika bukan halaman transaction order
+  }
+
   // ====== ELEMENTS ======
-  const $table   = $('table').first();                            // atau: $('#ordersTable')
+  const $table   = $ordersTable;
   const $thead   = $table.find('thead');
   const $tbody   = $table.find('tbody');
   const $tfoot   = $table.find('tfoot');
-  const $navWrap = $table.closest('.space-y-6').find('a[href*="?type="]').parent().parent(); // container 3 tab
-
-  // ====== HELPERS ======
+  const $navWrap = $table.closest('.space-y-6').find('a[href*="?type="]').parent().parent(); // container 3 tab  // ====== HELPERS ======
   const STATUS_LABEL = {
     pending   : 'Menunggu Pembayaran',
     confirmed : 'Dikonfirmasi',

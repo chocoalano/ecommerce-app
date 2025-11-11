@@ -18,7 +18,7 @@
                     type="text"
                     id="referral-link"
                     readonly
-                    value="{{ route('auth.register', ['ref' => auth()->guard('customer')->user()->code]) }}"
+                    value="{{ route('auth.register', ['ref' => $customer->code]) }}"
                     class="flex-grow p-3 border border-gray-300 rounded-lg bg-gray-50 text-sm font-medium focus:border-zinc-500"
                 >
                 <button
@@ -37,12 +37,52 @@
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.454m0 0a3 3 0 013-3m-6 3h6m-6 0a3 3 0 00-3 3v2M9 20h9"></path></svg>
                 Sponsor Anda
             </h2>
-            @if (auth()->user()->sponsor)
-                <p class="text-gray-800 font-medium">{{ auth()->user()->sponsor->name }}</p>
-                <p class="text-sm text-gray-500">{{ auth()->user()->sponsor->email }}</p>
+            @if ($sponsor)
+                <p class="text-gray-800 font-medium">{{ $sponsor->name }}</p>
+                <p class="text-sm text-gray-500">{{ $sponsor->email }}</p>
+                <p class="text-xs text-gray-400 mt-2">Kode: {{ $sponsor->code }}</p>
             @else
                 <p class="text-sm text-red-500">Anda belum memiliki sponsor.</p>
             @endif
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Referensi</p>
+                    <p class="text-3xl font-bold mt-2">{{ $totalReferrals }}</p>
+                </div>
+                <div class="bg-white/20 rounded-full p-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.454m0 0a3 3 0 013-3m-6 3h6m-6 0a3 3 0 00-3 3v2M9 20h9"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Member Aktif</p>
+                    <p class="text-3xl font-bold mt-2">{{ $activeReferrals }}</p>
+                </div>
+                <div class="bg-white/20 rounded-full p-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Member Tidak Aktif</p>
+                    <p class="text-3xl font-bold mt-2">{{ $inactiveReferrals }}</p>
+                </div>
+                <div class="bg-white/20 rounded-full p-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -50,51 +90,60 @@
     <div class="bg-white shadow-xl rounded-xl p-6">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Daftar Referensi Langsung</h2>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung Sejak</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktivitas Terakhir</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <!-- Loop Referrals Here -->
-                    {{-- @foreach($directReferrals as $referral) --}}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            Anggota 1 ({{ '@username1' }})
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            12 Mei 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                            Level 1
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Aktif 2 hari lalu
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            Anggota 2 ({{ '@username2' }})
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            1 Juni 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                            Level 1
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Aktif hari ini
-                        </td>
-                    </tr>
-                    {{-- @endforeach --}}
-                </tbody>
-            </table>
-        </div>
+        @if($directReferrals->isEmpty())
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M9 20H4v-2a3 3 0 015-2.454m0 0a3 3 0 013-3m-6 3h6m-6 0a3 3 0 00-3 3v2M9 20h9"></path></svg>
+                <p class="text-gray-500 text-lg">Anda belum memiliki referensi langsung.</p>
+                <p class="text-gray-400 text-sm mt-2">Bagikan link referensi Anda untuk mengundang member baru!</p>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Aktif</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($directReferrals as $referral)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ $referral->name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $referral->email }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ $referral->code }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($referral->is_active)
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Aktif
+                                    </span>
+                                @else
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Tidak Aktif
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $referral->created_at->format('d M Y') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $referral->updated_at->diffForHumans() }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
         <div class="mt-4">
             <a href="{{ route('auth.network.binary') }}" class="text-sm font-medium text-zinc-600 hover:text-zinc-800 transition duration-150">

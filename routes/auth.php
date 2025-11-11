@@ -18,6 +18,23 @@ Route::middleware(['customer'])->group(function () {
         Route::get('/network-list', [AuthController::class, 'network_list'])->name('network-list');
         Route::get('/komisi-list', [KomisiController::class, 'index'])->name('komisi-list');
         Route::get('/ewallet', [EwalletController::class, 'index'])->name('ewallet');
+
+        // Topup routes
+        Route::get('/ewallet/topup', [EwalletController::class, 'showTopupForm'])->name('ewallet.topup');
+        Route::post('/ewallet/topup', [EwalletController::class, 'submitTopup'])->name('ewallet.topup.submit');
+        Route::get('/ewallet/topup/{id}/finish', [EwalletController::class, 'topupFinish'])->name('ewallet.topup.finish');
+
+        // Manual approve topup for testing (should be admin only in production)
+        Route::post('/ewallet/topup/{id}/manual-approve', [EwalletController::class, 'manualApproveTopup'])->name('ewallet.topup.manual-approve');
+
+        // Withdrawal routes
+        Route::get('/ewallet/withdrawal', [EwalletController::class, 'showWithdrawalForm'])->name('ewallet.withdrawal');
+        Route::post('/ewallet/withdrawal', [EwalletController::class, 'submitWithdrawal'])->name('ewallet.withdrawal.submit');
+
+        // Admin routes (untuk approve/process)
+        Route::post('/ewallet/topup/{id}/approve', [EwalletController::class, 'approveTopup'])->name('ewallet.topup.approve');
+        Route::post('/ewallet/withdrawal/{id}/process', [EwalletController::class, 'processWithdrawal'])->name('ewallet.withdrawal.process');
+
         Route::get('/transaction-order', [TransactionOrderController::class, 'index'])->name('transaction-order');
 
         Route::get('network', [NetworkController::class,'index'])->name('network.binary');

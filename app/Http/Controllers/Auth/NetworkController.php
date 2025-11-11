@@ -57,6 +57,29 @@ class NetworkController extends Controller
     }
     public function sponsorship()
     {
-        return view('pages.auth.profile.network.network_sponsorship');
+        $customer = Auth::guard('customer')->user();
+
+        // Ambil data sponsor dari relasi Customer
+        $sponsor = $customer->sponsor;
+
+        // Ambil direct referrals (sponsorees) dari relasi Customer
+        $directReferrals = $customer->sponsorees()
+            ->select('id', 'name', 'email', 'code', 'created_at', 'updated_at', 'is_active')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Hitung total referrals dari MLM network
+        $totalReferrals = $customer->sponsorees()->count();
+        $activeReferrals = $customer->sponsorees()->where('is_active', true)->count();
+        $inactiveReferrals = $customer->sponsorees()->where('is_active', false)->count();
+
+        return view('pages.auth.profile.network.network_sponsorship', compact(
+            'customer',
+            'sponsor',
+            'directReferrals',
+            'totalReferrals',
+            'activeReferrals',
+            'inactiveReferrals'
+        ));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrderProduct\Order;
+use App\Models\Mlm\TblTopupRequest;
 use App\Services\MidtransGateway;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,11 +28,28 @@ class MidtransWebhookController extends Controller
 
             Log::info('Midtrans Notification Received', $notification);
 
-            // Find the order
-            $order = Order::where('order_no', $notification['order_id'])->first();
+            $orderId = $notification['order_id'];
+
+            // Check if it's a topup order (starts with TOPUP-)
+            if (str_starts_with($orderId, 'TOPUP-')) {
+                $topup = TblTopupRequest::where('order_no', $orderId)->first();
+
+                if (!$topup) {
+                    Log::error('Topup request not found', ['order_id' => $orderId]);
+                    return response()->json(['message' => 'Topup request not found'], 404);
+                }
+
+                // Call the EwalletController method to handle the topup notification
+                app(\App\Http\Controllers\Auth\EwalletController::class)->handleTopupNotification($notification);
+
+                return response()->json(['message' => 'Topup notification processed successfully']);
+            }
+
+            // Find the order (regular product order)
+            $order = Order::where('order_no', $orderId)->first();
 
             if (!$order) {
-                Log::error('Order not found for notification', ['order_id' => $notification['order_id']]);
+                Log::error('Order not found for notification', ['order_id' => $orderId]);
                 return response()->json(['message' => 'Order not found'], 404);
             }
 
@@ -64,51 +82,68 @@ class MidtransWebhookController extends Controller
 
         switch ($notification['status']) {
             case 'success':
+                // Payment berhasil - update status jadi paid
                 $order->update([
-                    'status' => 'confirmed',
-                    'notes' => json_encode($currentNotes)
+                    'status' => Order::ST_PAID,
+                    'notes' => json_encode($currentNotes),
+                    'paid_at' => now(),
                 ]);
 
-                // You can add email notification or other actions here
-                Log::info('Order payment confirmed', ['order_id' => $order->order_no]);
+                Log::info('Order payment successful - Status updated to PAID', [
+                    'order_id' => $order->order_no,
+                    'order_status' => Order::ST_PAID,
+                    'transaction_status' => $notification['transaction_status'],
+                    'payment_type' => $notification['payment_type'],
+                ]);
                 break;
 
             case 'pending':
+                // Payment masih pending - tetap pending
                 $order->update([
-                    'status' => 'pending',
+                    'status' => Order::ST_PENDING,
                     'notes' => json_encode($currentNotes)
                 ]);
 
-                Log::info('Order payment pending', ['order_id' => $order->order_no]);
+                Log::info('Order payment pending - Status remains PENDING', [
+                    'order_id' => $order->order_no,
+                    'transaction_status' => $notification['transaction_status'],
+                ]);
                 break;
 
             case 'failed':
             case 'cancelled':
             case 'expired':
+                // Payment gagal - tetap pending (bukan cancelled agar user bisa coba lagi)
                 $order->update([
-                    'status' => 'cancelled',
+                    'status' => Order::ST_PENDING,
                     'notes' => json_encode($currentNotes)
                 ]);
 
-                Log::info('Order payment failed/cancelled/expired', [
+                Log::info('Order payment failed/cancelled/expired - Status remains PENDING', [
                     'order_id' => $order->order_no,
-                    'reason' => $notification['status']
+                    'reason' => $notification['status'],
+                    'transaction_status' => $notification['transaction_status'],
                 ]);
                 break;
 
             case 'challenge':
+                // Payment di-challenge fraud detection - tetap pending
                 $order->update([
-                    'status' => 'pending',
+                    'status' => Order::ST_PENDING,
                     'notes' => json_encode($currentNotes)
                 ]);
 
-                Log::warning('Order payment challenged by FDS', ['order_id' => $order->order_no]);
+                Log::warning('Order payment challenged by FDS - Status remains PENDING', [
+                    'order_id' => $order->order_no,
+                    'fraud_status' => $notification['fraud_status'],
+                ]);
                 break;
 
             default:
                 Log::warning('Unknown payment status received', [
                     'order_id' => $order->order_no,
-                    'status' => $notification['status']
+                    'status' => $notification['status'],
+                    'transaction_status' => $notification['transaction_status'] ?? 'unknown',
                 ]);
         }
     }

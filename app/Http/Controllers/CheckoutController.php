@@ -109,7 +109,7 @@ class CheckoutController extends Controller
                 'order_no'         => $orderNo,
                 'customer_id'      => Auth::guard('customer')->id(),
                 'currency'         => $cart->currency ?? 'IDR',
-                'status'           => 'pending',
+                'status'           => Order::ST_PENDING, // Start with pending, will be updated after payment
                 'subtotal_amount'  => (float) $cart->subtotal_amount,
                 'discount_amount'  => (float) $cart->discount_amount,
                 'shipping_amount'  => (float) $cart->shipping_amount,
@@ -185,8 +185,12 @@ class CheckoutController extends Controller
                 'redirect_url' => $payment['redirect_url'] ?? null,
                 'payment_method' => $validated['payment_method'],
                 'created_at' => now()->toISOString(),
+                'initial_status' => Order::ST_PENDING,
             ];
-            $order->update(['notes' => json_encode($notes)]);
+            $order->update([
+                'notes' => json_encode($notes),
+                'status' => Order::ST_PENDING // Explicitly set pending while waiting for payment
+            ]);
 
             // Clear cart sebelum redirect/response
             $cart->items()->delete();
@@ -264,7 +268,61 @@ class CheckoutController extends Controller
         // Load relationships untuk display
         $order->load(['items.product', 'shippingAddress', 'customer']);
 
-        return view('pages.checkout.thankyou', compact('order'));
+        // Auto-check payment status jika order masih pending dan menggunakan Midtrans
+        if ($order->status === Order::ST_PENDING) {
+            $notes = json_decode($order->notes, true) ?? [];
+
+            if (isset($notes['gateway']) && $notes['gateway'] === 'midtrans') {
+                \Log::info('Thank You Page - Auto checking payment status', [
+                    'order_id' => $order->id,
+                    'order_no' => $order->order_no,
+                ]);
+
+                try {
+                    $midtrans = new MidtransGateway();
+                    $status = $midtrans->getTransactionStatus($order->order_no);
+
+                    \Log::info('Midtrans Payment Status Check from Thank You Page', [
+                        'order_no' => $order->order_no,
+                        'transaction_status' => $status['transaction_status'] ?? 'unknown',
+                        'status_code' => $status['status_code'] ?? 'unknown',
+                    ]);
+
+                    // Jika payment berhasil (settlement atau capture), update status
+                    if (in_array($status['transaction_status'], ['settlement', 'capture'])) {
+                        $notes['midtrans_notifications'][] = [
+                            'timestamp' => now()->toISOString(),
+                            'status' => 'success',
+                            'transaction_status' => $status['transaction_status'],
+                            'payment_type' => $status['payment_type'] ?? 'unknown',
+                            'fraud_status' => $status['fraud_status'] ?? 'accept',
+                            'checked_from' => 'thankyou_page',
+                        ];
+
+                        $order->update([
+                            'status' => Order::ST_PAID,
+                            'notes' => json_encode($notes),
+                            'paid_at' => now(),
+                        ]);
+
+                        \Log::info('Order Status Updated to PAID from Thank You Page', [
+                            'order_id' => $order->id,
+                            'order_no' => $order->order_no,
+                            'previous_status' => Order::ST_PENDING,
+                            'new_status' => Order::ST_PAID,
+                        ]);
+
+                        // Refresh order untuk menampilkan status terbaru
+                        $order->refresh();
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error checking payment status from Thank You page', [
+                        'order_no' => $order->order_no,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }        return view('pages.checkout.thankyou', compact('order'));
     }
 
     /**

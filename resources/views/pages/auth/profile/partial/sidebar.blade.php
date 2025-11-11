@@ -3,6 +3,33 @@
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-zinc-300">Menu</h4>
         <nav aria-label="Sidebar">
             @php
+                use App\Models\Mlm\TblNetwork;
+                use App\Models\Mlm\TblBonusSponsor;
+                use App\Models\Mlm\TblBonusPairing;
+                use App\Models\Mlm\TblBonusMatching;
+                use App\Models\Mlm\TblBonus;
+                use App\Models\Mlm\TblEwalletTransaction;
+                use App\Models\OrderProduct\Order;
+
+                $customerId = auth()->guard('customer')->id();
+
+                // Hitung statistik dari database MLM
+                $networkActive = TblNetwork::where('member_id', $customerId)->where('status', 'active')->count();
+                $networkInactive = TblNetwork::where('member_id', $customerId)->where('status', 'inactive')->count();
+                $networkProspect = TblNetwork::where('member_id', $customerId)->where('status', 'prospect')->count();
+
+                $komisiSponsor = TblBonusSponsor::where('member_id', $customerId)->count();
+                $komisiPairing = TblBonusPairing::where('member_id', $customerId)->count();
+                $komisiMatching = TblBonusMatching::where('member_id', $customerId)->count();
+                $rewards = TblBonus::where('member_id', $customerId)->count();
+
+                $ewalletTransactions = TblEwalletTransaction::where('member_id', $customerId)->count();
+                $ewalletWithdrawals = TblEwalletTransaction::where('member_id', $customerId)->where('type', 'withdrawal')->count();
+
+                $ordersPending = Order::where('customer_id', $customerId)->where('status', 'pending')->count();
+                $ordersPaid = Order::where('customer_id', $customerId)->where('status', 'paid')->count();
+                $ordersCompleted = Order::where('customer_id', $customerId)->where('status', 'completed')->count();
+
                 // Define sidebar menu as an array for easier maintenance
                 $sidebarMenu = [
                     [
@@ -23,9 +50,9 @@
                         'id' => 'dropdown-member',
                         'icon' => 'users',
                         'children' => [
-                            ['label' => 'Member Aktif', 'href' => route('auth.network-list', ['members'=>'active'])],
-                            ['label' => 'Member Pasif', 'href' => route('auth.network-list', ['members'=>'inactive'])],
-                            ['label' => 'Prospek Member', 'href' => route('auth.network-list', ['members'=>'prospect'])],
+                            ['label' => 'Member Aktif', 'href' => route('auth.network-list', ['members'=>'active']), 'badge' => $networkActive],
+                            ['label' => 'Member Pasif', 'href' => route('auth.network-list', ['members'=>'inactive']), 'badge' => $networkInactive],
+                            ['label' => 'Prospek Member', 'href' => route('auth.network-list', ['members'=>'prospect']), 'badge' => $networkProspect],
                         ],
                     ],
                     [
@@ -44,10 +71,10 @@
                         'id' => 'dropdown-komisi',
                         'icon' => 'trophy',
                         'children' => [
-                            ['label' => 'Komisi Sponsor', 'href' => route('auth.komisi-list', ['type' => 'sponsors'])],
-                            ['label' => 'Komisi Pairing', 'href' => route('auth.komisi-list', ['type' => 'pairings'])],
-                            ['label' => 'Komisi Matching', 'href' => route('auth.komisi-list', ['type' => 'matchings'])],
-                            ['label' => 'Reward', 'href' => route('auth.komisi-list', ['type' => 'rewards'])],
+                            ['label' => 'Komisi Sponsor', 'href' => route('auth.komisi-list', ['type' => 'sponsors']), 'badge' => $komisiSponsor],
+                            ['label' => 'Komisi Pairing', 'href' => route('auth.komisi-list', ['type' => 'pairings']), 'badge' => $komisiPairing],
+                            ['label' => 'Komisi Matching', 'href' => route('auth.komisi-list', ['type' => 'matchings']), 'badge' => $komisiMatching],
+                            ['label' => 'Reward', 'href' => route('auth.komisi-list', ['type' => 'rewards']), 'badge' => $rewards],
                         ],
                     ],
                     [
@@ -56,8 +83,8 @@
                         'id' => 'dropdown-ewallet',
                         'icon' => 'wallet',
                         'children' => [
-                            ['label' => 'Transaksi Ewallet', 'href' => route('auth.ewallet', ['type'=>'transactions'])],
-                            ['label' => 'Penarikan Komisi', 'href' => route('auth.ewallet', ['type'=>'withdrawal'])],
+                            ['label' => 'Transaksi Ewallet', 'href' => route('auth.ewallet', ['type'=>'transactions']), 'badge' => $ewalletTransactions],
+                            ['label' => 'Penarikan Komisi', 'href' => route('auth.ewallet', ['type'=>'withdrawal']), 'badge' => $ewalletWithdrawals],
                         ],
                     ],
                     [
@@ -66,9 +93,9 @@
                         'id' => 'dropdown-transaksi',
                         'icon' => 'cart',
                         'children' => [
-                            ['label' => 'Pending', 'href' => route('auth.transaction-order', ['status'=>'pending'])],
-                            ['label' => 'Berbayar', 'href' => route('auth.transaction-order', ['status'=>'paid'])],
-                            ['label' => 'Selesai', 'href' => route('auth.transaction-order', ['status'=>'completed'])],
+                            ['label' => 'Pending', 'href' => route('auth.transaction-order', ['status'=>'pending']), 'badge' => $ordersPending],
+                            ['label' => 'Berbayar', 'href' => route('auth.transaction-order', ['status'=>'paid']), 'badge' => $ordersPaid],
+                            ['label' => 'Selesai', 'href' => route('auth.transaction-order', ['status'=>'completed']), 'badge' => $ordersCompleted],
                         ],
                     ],
                 ];
@@ -127,7 +154,14 @@
                                 @foreach ($item['children'] as $child)
                                     <li>
                                         <a href="{{ $child['href'] }}"
-                                            class="flex items-center w-full p-2 text-zinc-900 transition duration-75 rounded-lg pl-11 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-700">{{ $child['label'] }}</a>
+                                            class="flex items-center justify-between w-full p-2 text-zinc-900 transition duration-75 rounded-lg pl-11 hover:bg-zinc-100 dark:text-white dark:hover:bg-zinc-700">
+                                            <span>{{ $child['label'] }}</span>
+                                            @if(isset($child['badge']) && $child['badge'] > 0)
+                                                <span class="inline-flex items-center justify-center w-6 h-6 text-xs font-semibold text-zinc-800 bg-zinc-200 rounded-full dark:bg-zinc-700 dark:text-zinc-300">
+                                                    {{ $child['badge'] }}
+                                                </span>
+                                            @endif
+                                        </a>
                                     </li>
                                 @endforeach
                             </ul>

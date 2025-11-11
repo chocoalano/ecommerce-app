@@ -1,5 +1,4 @@
 <?php
-// app/DTOs/OrderFilterDTO.php
 namespace App\DTOs;
 
 use Illuminate\Http\Request;
