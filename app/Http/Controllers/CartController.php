@@ -53,8 +53,6 @@ class CartController extends Controller
                     'message' => 'Unauthenticated.',
                 ], Response::HTTP_UNAUTHORIZED);
             }
-
-            // Non-AJAX: abort 401 (bisa diganti redirect()->route('auth.login'))
             abort(Response::HTTP_UNAUTHORIZED);
         }
 

@@ -142,8 +142,7 @@
 
             } catch (xhr) {
                 if (xhr?.status === 401) {
-                    // Pastikan route('auth.login') sudah didefinisikan sebagai variabel global
-                    window.location.href = "{{ route('auth.login') }}";
+                    window.location.href = "/auth/login";
                 } else {
                     toastError(xhr?.responseJSON?.message || 'Gagal mengupdate wishlist');
                 }
@@ -193,7 +192,7 @@
 
             } catch (xhr) {
                 if (xhr?.status === 401) {
-                    window.location.href = "{{ route('auth.login') }}";
+                    window.location.href = "/auth/login";
                 } else if (typeof window.showFriendlyError === 'function') {
                     // Gunakan showFriendlyError (jika ada)
                     window.showFriendlyError({ status: xhr?.status }, xhr?.responseJSON);

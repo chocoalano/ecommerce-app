@@ -74,7 +74,7 @@
         if (typeof res.wishlist_count === 'number') updateWishlistBadge(res.wishlist_count);
         toastSuccess(res.message || 'Wishlist diperbarui.');
       } catch (xhr) {
-        if (xhr?.status === 401) return (window.location.href = "{{ route('auth.login') }}");
+        if (xhr?.status === 401) return (window.location.href = "/login");
         toastError(xhr?.responseJSON?.message || 'Gagal mengupdate wishlist');
       } finally {
         $btn.prop('disabled', false);
@@ -105,7 +105,7 @@
         // Jika ingin redirect:
         // window.location.href = "{{ route('cart.index') }}";
       } catch (xhr) {
-        if (xhr?.status === 401) return (window.location.href = "{{ route('auth.login') }}");
+        if (xhr?.status === 401) return (window.location.href = "/auth/login");
         const msg = xhr?.responseJSON?.message || 'Gagal menambahkan ke keranjang.';
         (window.showFriendlyError ? window.showFriendlyError({ status: xhr?.status }, xhr?.responseJSON) : toastError(msg));
       } finally {

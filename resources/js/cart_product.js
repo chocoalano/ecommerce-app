@@ -101,7 +101,7 @@
                 } catch (xhr) {
                     // gagal
                     if (xhr?.status === 401) {
-                        window.location.href = "{{ route('auth.login') }}";
+                        window.location.href = "/login";
                     } else if (typeof window.showErrorToast === 'function') {
                         window.showErrorToast(xhr?.responseJSON?.message || 'Gagal mengupdate wishlist');
                     } else {
@@ -162,7 +162,7 @@
 
                 } catch (xhr) {
                     if (xhr?.status === 401) {
-                        window.location.href = "{{ route('auth.login') }}";
+                        window.location.href = "/auth/login";
                     } else if (typeof window.showFriendlyError === 'function') {
                         window.showFriendlyError({ status: xhr?.status }, xhr?.responseJSON);
                     } else if (typeof window.showErrorToast === 'function') {
