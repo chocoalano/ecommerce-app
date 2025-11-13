@@ -60,8 +60,8 @@
                                         <span class="text-gray-600">Status:</span>
                                         <span class="px-3 py-1 rounded-full text-sm
                                             @if($topup->status == 'approved') bg-green-100 text-green-800
-                                            @elseif($topup->status == 'pending') bg-yellow-100 text-yellow-800
-                                            @else bg-red-100 text-red-800
+                                            @elseif($topup->status == 'pending')
+                                            @else
                                             @endif">
                                             @if($topup->status == 'approved') Berhasil
                                             @elseif($topup->status == 'pending') Menunggu
