@@ -5,8 +5,12 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/{any?}', function () {
+    return view('welcome');
+})->where('any', '.*')->name('welcome');
+
 // Rute Umum dan Produk
-Route::get('/', [HomeController::class, 'index'])->name('home');
+// Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/', [HomeController::class, 'newsletter'])->name('newsletter');
 
 // Page Routes (accessible to everyone)
